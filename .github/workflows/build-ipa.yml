@@ -32,38 +32,22 @@ jobs:
         working-directory: ios-app
         run: npm ci
 
-      # ── 5. Add iOS platform (scaffolds ios/ native project + Podfile) ────
+      # ── 5. Add iOS platform (Capacitor 8 uses SPM — no CocoaPods) ────────
       - name: Add Capacitor iOS platform
         working-directory: ios-app
-        run: |
-          node node_modules/@capacitor/cli/bin/capacitor add ios
-          echo "=== ios/ tree after cap add ==="
-          find ios -maxdepth 3 -type f | sort
+        run: node node_modules/@capacitor/cli/bin/capacitor add ios
 
       # ── 6. Sync web assets into the native project ───────────────────────
       - name: Sync web assets
         working-directory: ios-app
         run: node node_modules/@capacitor/cli/bin/capacitor sync ios
 
-      # ── 7. Install CocoaPods (generates App.xcworkspace) ─────────────────
-      - name: Install CocoaPods
-        working-directory: ios-app/ios/App
-        run: |
-          echo "=== Working directory ==="
-          pwd
-          echo "=== Files present ==="
-          ls -la
-          echo "=== Running pod install ==="
-          pod install --repo-update
-          echo "=== Verifying App.xcworkspace ==="
-          ls -la App.xcworkspace/
-
-      # ── 8. Build unsigned archive ─────────────────────────────────────────
+      # ── 7. Build unsigned archive (SPM project — use .xcodeproj) ─────────
       - name: Build IPA (unsigned)
         working-directory: ios-app/ios/App
         run: |
           xcodebuild \
-            -workspace App.xcworkspace \
+            -project App.xcodeproj \
             -scheme App \
             -configuration Release \
             -destination generic/platform=iOS \
@@ -73,7 +57,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-      # ── 9. Export IPA ─────────────────────────────────────────────────────
+      # ── 8. Export IPA ─────────────────────────────────────────────────────
       - name: Export IPA
         run: |
           xcodebuild \
@@ -82,7 +66,7 @@ jobs:
             -exportPath "$RUNNER_TEMP/ipa" \
             -exportOptionsPlist "$GITHUB_WORKSPACE/ios-app/ExportOptions.plist"
 
-      # ── 10. Upload IPA artifact ───────────────────────────────────────────
+      # ── 9. Upload IPA artifact ────────────────────────────────────────────
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
