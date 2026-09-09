@@ -40,7 +40,7 @@ jobs:
       # ── 6. Sync web assets ───────────────────────────────────────────────
       - name: Sync web assets
         working-directory: ios-app
-        run: node node_modules/@capacitor/cli/bin/capacitor sync ios --no-build
+        run: node node_modules/@capacitor/cli/bin/capacitor sync ios
 
       # ── 7. Install CocoaPods (creates App.xcworkspace) ───────────────────
       - name: Install CocoaPods
