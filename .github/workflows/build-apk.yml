@@ -22,33 +22,37 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # ── 3. Set up Node.js ────────────────────────────────────────────────
+      # ── 3. Set up Android SDK ────────────────────────────────────────────
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # ── 4. Set up Node.js ────────────────────────────────────────────────
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      # ── 4. Install Capacitor dependencies ────────────────────────────────
+      # ── 5. Install Capacitor dependencies ────────────────────────────────
       - name: Install npm dependencies
         working-directory: android-app
-        run: npm install
+        run: npm ci
 
-      # ── 5. Fix executable bits lost by Windows git ───────────────────────
+      # ── 6. Fix executable bits lost by Windows git ───────────────────────
       - name: Fix bin permissions
         working-directory: android-app
         run: chmod +x node_modules/.bin/cap node_modules/@capacitor/cli/bin/capacitor
 
-      # ── 6. Add Android platform ──────────────────────────────────────────
+      # ── 7. Add Android platform ──────────────────────────────────────────
       - name: Add Capacitor Android platform
         working-directory: android-app
         run: node node_modules/@capacitor/cli/bin/capacitor add android
 
-      # ── 7. Sync web assets ───────────────────────────────────────────────
+      # ── 8. Sync web assets ───────────────────────────────────────────────
       - name: Sync web assets
         working-directory: android-app
         run: node node_modules/@capacitor/cli/bin/capacitor sync android
 
-      # ── 8. Patch AndroidManifest with all required permissions ───────────
+      # ── 9. Patch AndroidManifest with all required permissions ───────────
       - name: Patch AndroidManifest permissions
         working-directory: android-app/android
         run: |
@@ -59,17 +63,17 @@ jobs:
           echo "--- Manifest after patch ---"
           grep "uses-permission" "$MANIFEST"
 
-      # ── 9. Grant Gradle wrapper execute permission ────────────────────────
+      # ── 10. Grant Gradle wrapper execute permission ───────────────────────
       - name: Make gradlew executable
         working-directory: android-app/android
         run: chmod +x gradlew
 
-      # ── 9. Build debug APK ───────────────────────────────────────────────
+      # ── 11. Build debug APK ──────────────────────────────────────────────
       - name: Build debug APK
         working-directory: android-app/android
         run: ./gradlew assembleDebug --no-daemon
 
-      # ── 10. Upload APK artifact ──────────────────────────────────────────
+      # ── 12. Upload APK artifact ──────────────────────────────────────────
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
