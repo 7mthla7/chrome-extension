@@ -25,8 +25,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://kroger.hosted.aspect-cloud.net/WFO/default/Home/Dashboard*",
-        "file:///*/test-page.html"
+        "https://kroger.hosted.aspect-cloud.net/WFO/default/Home/Dashboard*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"

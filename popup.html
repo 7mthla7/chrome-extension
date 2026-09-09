@@ -66,27 +66,6 @@
         <canvas class="qr-overlay__canvas" id="qr-canvas" width="240" height="240"></canvas>
         <p class="qr-overlay__hint" id="qr-hint"></p>
 
-        <!-- Optional viewer URL — if set the QR encodes a real https:// link instead of raw text -->
-        <details class="qr-url-details" id="qr-url-details">
-          <summary class="qr-url-details__summary">Open as link on phone</summary>
-          <div class="qr-url-details__body">
-            <p class="qr-url-details__help">
-              Deploy <code>schedule-view.html</code> to a public host (e.g.
-              <a href="https://pages.github.com" target="_blank" rel="noopener">GitHub Pages</a>),
-              paste the base URL below, and the QR will open the <strong>Alvaria Alarms PWA</strong>
-              — a full installable app where users can view their schedule, manage alarms, and
-              scan future QR codes directly from their phone.
-            </p>
-            <div class="qr-url-details__row">
-              <input class="qr-url-details__input" id="qr-base-url" type="url"
-                placeholder="https://you.github.io/alvaria-view"
-                autocomplete="url" spellcheck="false" />
-              <button class="btn btn--primary qr-url-details__save" id="qr-save-url" type="button">Set</button>
-            </div>
-            <p class="qr-url-details__status" id="qr-url-status"></p>
-          </div>
-        </details>
-
         <div class="qr-overlay__actions">
           <a class="btn btn--primary qr-overlay__download" id="qr-download" download="schedule-qr.png" aria-label="Download QR code as PNG">Download QR</a>
         </div>

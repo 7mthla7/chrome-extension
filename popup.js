@@ -906,32 +906,6 @@ function _decodePriority(label) {
 // QR capacity at error correction M (good balance of density vs reliability).
 // Compact string (~344 chars) needs only version 14-M → 73×73 modules → crisp.
 const QR_MAX_BYTES = 2331;  // version 40-M; compact strings are far below this
-const QR_BASE_URL_KEY = "qrViewerUrl";
-
-// Load/save the optional viewer base URL from storage.
-async function _loadViewerUrl() {
-  try {
-    const s = await chrome.storage.local.get(QR_BASE_URL_KEY);
-    return s[QR_BASE_URL_KEY] || "";
-  } catch { return ""; }
-}
-async function _saveViewerUrl(url) {
-  try { await chrome.storage.local.set({ [QR_BASE_URL_KEY]: url }); } catch { /* non-critical */ }
-}
-
-// Build the string to encode in the QR:
-//   • If viewerUrl is set → "https://yourpage.github.io/.../schedule-view.html#<compact>"
-//     (phone camera taps to open a human-readable page)
-//   • Otherwise           → the compact V1 string directly (~344 chars)
-//     (phone camera shows the raw compact text; any QR scanner can read it)
-function _buildQrPayload(compact, viewerUrl) {
-  if (viewerUrl) {
-    const base = viewerUrl.replace(/\/+$/, "");
-    return `${base}/schedule-view.html#${encodeURIComponent(compact)}`;
-  }
-  return compact;
-}
-
 // HTML-escape helper.
 function _htmlEsc(str) {
   return String(str)
@@ -1030,28 +1004,15 @@ function showQrError(canvas, message) {
 }
 
 // Open (or refresh) the QR overlay.
-async function openQrOverlay() {
+function openQrOverlay() {
   const overlay = document.getElementById("qr-overlay");
   const canvas  = document.getElementById("qr-canvas");
   if (!overlay || !canvas) return;
 
   overlay.hidden = false;
 
-  const compact    = encodeSchedule(_currentSegments);
-  const viewerUrl  = await _loadViewerUrl();
-  const payload    = _buildQrPayload(compact, viewerUrl);
-  const isUrl      = !!viewerUrl;
+  const payload        = encodeSchedule(_currentSegments);
   const isOverCapacity = payload.length > QR_MAX_BYTES;
-
-  // Populate the viewer URL input with whatever is stored.
-  const urlInput = document.getElementById("qr-base-url");
-  if (urlInput && viewerUrl && !urlInput.value) urlInput.value = viewerUrl;
-
-  // Log for diagnostics.
-  console.debug(
-    `[alvaria-alerts] QR — compact: ${compact.length} chars,` +
-    ` payload: ${payload.length} chars (${isUrl ? "URL" : "raw"})`
-  );
 
   if (isOverCapacity) {
     showQrError(canvas, `Payload too large (${payload.length} / ${QR_MAX_BYTES} chars). Remove some alarms.`);
@@ -1064,7 +1025,7 @@ async function openQrOverlay() {
     }
   }
 
-  updateQrMeta(payload, isUrl, isOverCapacity);
+  updateQrMeta(payload, false, isOverCapacity);
 }
 
 function closeQrOverlay() {
@@ -1088,31 +1049,6 @@ const qrOverlay = document.getElementById("qr-overlay");
 if (qrOverlay) {
   qrOverlay.addEventListener("click", (e) => {
     if (e.target === qrOverlay) closeQrOverlay();
-  });
-}
-
-// ── Viewer URL "Set" button ───────────────────────────────────────────────────
-
-const qrSaveUrl = document.getElementById("qr-save-url");
-if (qrSaveUrl) {
-  qrSaveUrl.addEventListener("click", async () => {
-    const input    = document.getElementById("qr-base-url");
-    const statusEl = document.getElementById("qr-url-status");
-    const raw      = (input?.value || "").trim();
-
-    if (!raw) return;
-
-    if (!/^https?:\/\/.+/.test(raw)) {
-      if (input) input.style.outlineColor = "#ef4444";
-      if (statusEl) statusEl.textContent = "Must be an https:// URL.";
-      return;
-    }
-    if (input) input.style.outlineColor = "";
-    if (statusEl) statusEl.textContent = "";
-
-    await _saveViewerUrl(raw);
-    // Regenerate the QR with the new URL payload.
-    openQrOverlay();
   });
 }
 
