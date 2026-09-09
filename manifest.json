@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Alvaria Segment Alerts",
+  "name": "Alarm",
   "version": "0.1.0",
   "description": "Alerts at the start of each schedule segment on the Alvaria WFO dashboard.",
   "permissions": [

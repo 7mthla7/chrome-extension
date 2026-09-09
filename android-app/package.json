@@ -1,7 +1,7 @@
 {
-  "name": "alvaria-alarms",
+  "name": "alarm",
   "version": "1.0.0",
-  "description": "Alvaria Alarms — Android app built with Capacitor",
+  "description": "Alarm — Android app built with Capacitor",
   "private": true,
   "scripts": {
     "build": "echo 'No build step — static HTML app'",

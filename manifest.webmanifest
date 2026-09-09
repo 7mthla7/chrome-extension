@@ -1,6 +1,6 @@
 {
-  "name": "Alvaria Alarms",
-  "short_name": "Alarms",
+  "name": "Alarm",
+  "short_name": "Alarm",
   "description": "Turns your Alvaria WFO schedule into on-device alarms. Scan a QR from the extension to import your schedule.",
   "start_url": "./schedule-view.html",
   "display": "standalone",

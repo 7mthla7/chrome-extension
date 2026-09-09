@@ -1,11 +1,11 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Alvaria Alarms — Service Worker  v2
+   Alarm — Service Worker  v2
    • Caches app shell for offline use
    • Handles showNotification() calls from the app (background notifications)
    • Handles notificationclick to open/focus the app
    ───────────────────────────────────────────────────────────────────────────── */
 
-const CACHE_NAME   = "alvaria-alarms-v2";
+const CACHE_NAME   = "alarm-v2";
 const CACHE_ASSETS = [
   "./index.html",
   "./manifest.webmanifest",

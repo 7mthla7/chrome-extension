@@ -1,6 +1,6 @@
 {
   "appId": "com.alvaria.alarms",
-  "appName": "Alvaria Alarms",
+  "appName": "Alarm",
   "webDir": "www",
   "bundledWebRuntime": false,
   "android": {

@@ -1,11 +1,11 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Alvaria Alarms — Service Worker
+   Alarm — Service Worker
    Provides offline support by caching the app shell on install and serving it
    from cache on subsequent requests.  Cache-first for app shell assets,
    network-first for anything else.
    ───────────────────────────────────────────────────────────────────────────── */
 
-const CACHE_NAME   = "alvaria-alarms-v1";
+const CACHE_NAME   = "alarm-v1";
 const CACHE_ASSETS = [
   "./schedule-view.html",
   "./manifest.webmanifest",

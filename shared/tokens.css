@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Alvaria Segment Alerts — Shared Design Tokens
+   Alarm — Shared Design Tokens
    Single source of truth for colors, typography, spacing, radius, shadows, and
    transitions.  Both the browser-extension popup (popup.css) and the web viewer
    / PWA (schedule-view.html) import this file so the entire product shares one

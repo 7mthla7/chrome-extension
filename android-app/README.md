@@ -27,7 +27,7 @@ git push origin main
 
 1. Click on the completed workflow run
 2. Scroll to the bottom of the page to the **Artifacts** section
-3. Click **`alvaria-alarms-debug`** to download a `.zip` file
+3. Click **`alarm-debug`** to download a `.zip` file
 4. Unzip it — inside is **`app-debug.apk`**
 
 ### Step 4 — Install on your Android phone
@@ -35,7 +35,7 @@ git push origin main
 1. Transfer `app-debug.apk` to your phone (email, Google Drive, USB, etc.)
 2. On your phone, go to **Settings → Security → Install unknown apps** and allow your file manager or browser
 3. Tap the APK file to install it
-4. Open **Alvaria Alarms** from your app drawer
+4. Open **Alarm** from your app drawer
 
 ---
 
