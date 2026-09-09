@@ -40,9 +40,14 @@ jobs:
       # ── 6. Sync web assets ───────────────────────────────────────────────
       - name: Sync web assets
         working-directory: ios-app
-        run: node node_modules/@capacitor/cli/bin/capacitor sync ios
+        run: node node_modules/@capacitor/cli/bin/capacitor sync ios --no-build
 
-      # ── 7. Build unsigned IPA (no signing required) ──────────────────────
+      # ── 7. Install CocoaPods (creates App.xcworkspace) ───────────────────
+      - name: Install CocoaPods
+        working-directory: ios-app/ios/App
+        run: pod install --repo-update
+
+      # ── 8. Build unsigned IPA (no signing required) ──────────────────────
       - name: Build IPA (unsigned)
         working-directory: ios-app/ios/App
         run: |
@@ -62,7 +67,7 @@ jobs:
             -exportPath "$RUNNER_TEMP/ipa" \
             -exportOptionsPlist "$GITHUB_WORKSPACE/ios-app/ExportOptions.plist"
 
-      # ── 8. Upload IPA artifact ───────────────────────────────────────────
+      # ── 9. Upload IPA artifact ───────────────────────────────────────────
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
