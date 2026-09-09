@@ -1,0 +1,76 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ipa:
+    name: Build unsigned IPA
+    runs-on: macos-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Node.js ────────────────────────────────────────────────
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # ── 3. Select latest stable Xcode ────────────────────────────────────
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      # ── 4. Install Capacitor dependencies ────────────────────────────────
+      - name: Install npm dependencies
+        working-directory: ios-app
+        run: npm ci
+
+      # ── 5. Add iOS platform ──────────────────────────────────────────────
+      - name: Add Capacitor iOS platform
+        working-directory: ios-app
+        run: node node_modules/@capacitor/cli/bin/capacitor add ios
+
+      # ── 6. Sync web assets ───────────────────────────────────────────────
+      - name: Sync web assets
+        working-directory: ios-app
+        run: node node_modules/@capacitor/cli/bin/capacitor sync ios
+
+      # ── 7. Install CocoaPods dependencies ────────────────────────────────
+      - name: Install CocoaPods
+        working-directory: ios-app/ios/App
+        run: pod install
+
+      # ── 8. Build unsigned IPA (no signing required) ──────────────────────
+      - name: Build IPA (unsigned)
+        working-directory: ios-app/ios/App
+        run: |
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination generic/platform=iOS \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            archive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/ipa" \
+            -exportOptionsPlist "$GITHUB_WORKSPACE/ios-app/ExportOptions.plist"
+
+      # ── 9. Upload IPA artifact ───────────────────────────────────────────
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: alarm-ios
+          path: ${{ runner.temp }}/ipa/*.ipa
+          retention-days: 30

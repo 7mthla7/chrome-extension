@@ -1,0 +1,22 @@
+{
+  "appId": "com.alvaria.alarms",
+  "appName": "Alarm",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "ios": {
+    "contentInset": "automatic",
+    "allowsLinkPreview": false,
+    "scrollEnabled": true,
+    "backgroundColor": "#F7F8FA"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    },
+    "LocalNotifications": {
+      "smallIcon": "AppIcon",
+      "iconColor": "#2563EB",
+      "sound": "alarm.wav"
+    }
+  }
+}
