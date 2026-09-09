@@ -1,0 +1,108 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Alvaria Segment Alerts — Shared Design Tokens
+   Single source of truth for colors, typography, spacing, radius, shadows, and
+   transitions.  Both the browser-extension popup (popup.css) and the web viewer
+   / PWA (schedule-view.html) import this file so the entire product shares one
+   visual identity.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Light-mode tokens (default) ─────────────────────────────────────────────*/
+:root {
+  /* Surfaces */
+  --bg:              #F7F8FA;
+  --card:            #FFFFFF;
+  --border:          #E5E7EB;
+
+  /* Text */
+  --text:            #17202A;
+  --text-muted:      #6B7280;
+
+  /* Brand / interactive */
+  --accent:          #2563EB;
+  --accent-hover:    #1D4ED8;
+
+  /* Semantic colours */
+  --success:         #22C55E;
+  --warning:         #F59E0B;
+  --danger:          #EF4444;
+  --meal:            #3B82F6;
+  --special:         #8B5CF6;
+  --disabled:        #9CA3AF;
+
+  /* Shape */
+  --radius-sm:       8px;
+  --radius-md:       12px;
+  --radius-lg:       16px;
+
+  /* Elevation */
+  --shadow-card:     0 1px 4px rgba(0, 0, 0, .08);
+  --shadow-modal:    0 20px 60px rgba(0, 0, 0, .18);
+
+  /* Motion */
+  --transition:      120ms ease;
+  --transition-slow: 220ms ease;
+
+  /* Typography */
+  --font-family:     -apple-system, "Segoe UI", system-ui, Arial, sans-serif;
+  --font-size-xs:    11px;
+  --font-size-sm:    12px;
+  --font-size-base:  14px;
+  --font-size-md:    15px;
+  --font-size-lg:    16px;
+  --font-size-xl:    17px;
+  --font-size-2xl:   22px;
+
+  /* Spacing scale */
+  --space-1:  4px;
+  --space-2:  6px;
+  --space-3:  8px;
+  --space-4:  10px;
+  --space-5:  12px;
+  --space-6:  14px;
+  --space-7:  16px;
+  --space-8:  20px;
+  --space-9:  24px;
+  --space-10: 32px;
+
+  /* Dot indicator colours (semantic aliases) */
+  --dot-break:   var(--warning);
+  --dot-meal:    var(--meal);
+  --dot-special: var(--special);
+  --dot-manual:  var(--success);
+  --dot-muted:   var(--disabled);
+
+  /* Z-index scale */
+  --z-overlay:   100;
+  --z-toast:     200;
+  --z-header:    10;
+}
+
+/* ── Dark-mode tokens ────────────────────────────────────────────────────────
+   Applied when <html> or <body> carries  data-theme="dark"
+   ─────────────────────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  /* Surfaces */
+  --bg:              #111827;
+  --card:            #1F2937;
+  --border:          #374151;
+
+  /* Text */
+  --text:            #F9FAFB;
+  --text-muted:      #9CA3AF;
+
+  /* Brand / interactive */
+  --accent:          #3B82F6;
+  --accent-hover:    #2563EB;
+
+  /* Semantic colours */
+  --success:         #22C55E;
+  --warning:         #F59E0B;
+  --danger:          #F87171;
+  --meal:            #60A5FA;
+  --special:         #A78BFA;
+  --disabled:        #6B7280;
+
+  /* Elevation */
+  --shadow-card:     0 1px 6px rgba(0, 0, 0, .4);
+  --shadow-modal:    0 20px 60px rgba(0, 0, 0, .55);
+}

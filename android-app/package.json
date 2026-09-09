@@ -1,0 +1,20 @@
+{
+  "name": "alvaria-alarms",
+  "version": "1.0.0",
+  "description": "Alvaria Alarms — Android app built with Capacitor",
+  "private": true,
+  "scripts": {
+    "build": "echo 'No build step — static HTML app'",
+    "cap:add": "npx cap add android",
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/local-notifications": "^6.1.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

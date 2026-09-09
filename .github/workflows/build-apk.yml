@@ -1,0 +1,78 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Java 17 ────────────────────────────────────────────────
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # ── 3. Set up Node.js ────────────────────────────────────────────────
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # ── 4. Install Capacitor dependencies ────────────────────────────────
+      - name: Install npm dependencies
+        working-directory: android-app
+        run: npm install
+
+      # ── 5. Fix executable bits lost by Windows git ───────────────────────
+      - name: Fix bin permissions
+        working-directory: android-app
+        run: chmod +x node_modules/.bin/cap node_modules/@capacitor/cli/bin/capacitor
+
+      # ── 6. Add Android platform ──────────────────────────────────────────
+      - name: Add Capacitor Android platform
+        working-directory: android-app
+        run: node node_modules/@capacitor/cli/bin/capacitor add android
+
+      # ── 7. Sync web assets ───────────────────────────────────────────────
+      - name: Sync web assets
+        working-directory: android-app
+        run: node node_modules/@capacitor/cli/bin/capacitor sync android
+
+      # ── 8. Patch AndroidManifest with all required permissions ───────────
+      - name: Patch AndroidManifest permissions
+        working-directory: android-app/android
+        run: |
+          MANIFEST="app/src/main/AndroidManifest.xml"
+          if ! grep -q "CAMERA" "$MANIFEST"; then
+            sed -i 's|<manifest\(.*\)>|\0\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.VIBRATE" />\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />|' "$MANIFEST"
+          fi
+          echo "--- Manifest after patch ---"
+          grep "uses-permission" "$MANIFEST"
+
+      # ── 9. Grant Gradle wrapper execute permission ────────────────────────
+      - name: Make gradlew executable
+        working-directory: android-app/android
+        run: chmod +x gradlew
+
+      # ── 9. Build debug APK ───────────────────────────────────────────────
+      - name: Build debug APK
+        working-directory: android-app/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      # ── 10. Upload APK artifact ──────────────────────────────────────────
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: alvaria-alarms-debug
+          path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30

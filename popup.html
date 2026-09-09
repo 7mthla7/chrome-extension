@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alarms</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup">
+
+    <!-- ── Header ── -->
+    <header class="app-header">
+      <div class="app-header__left">
+        <button class="app-header__refresh" id="refresh-btn" type="button" aria-label="Refresh alarms">↻</button>
+        <button class="app-header__qr" id="qr-btn" type="button" aria-label="Share schedule as QR code" title="QR code">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/>
+            <path d="M14 14h3v3h-3z"/><path d="M17 17h4"/><path d="M17 21v-4"/>
+          </svg>
+        </button>
+      </div>
+      <div class="app-header__center">
+        <span class="app-header__icon" aria-hidden="true">🔔</span>
+        <span class="app-header__title">Alarms</span>
+      </div>
+      <div class="app-header__actions">
+        <button class="app-header__theme" id="theme-toggle" aria-label="Switch to dark mode" type="button">🌙</button>
+        <button class="app-header__popout" id="popout-btn" type="button" aria-label="Open as movable window" title="Pop out">⧉</button>
+      </div>
+    </header>
+    <p class="app-date" id="app-date"></p>
+
+    <!-- ── Settings panel (hidden by default) ── -->
+    <section class="settings-panel" id="settings-panel" hidden aria-label="Settings">
+      <h2 class="settings-panel__title">Add Alarm</h2>
+      <form id="manual-form" class="manual-form" novalidate>
+        <label class="field">
+          <span class="field__label">Date</span>
+          <input id="manual-date" class="field__input" type="date" required />
+        </label>
+        <label class="field">
+          <span class="field__label">Time</span>
+          <input id="manual-time" class="field__input" type="time" required />
+        </label>
+        <label class="field">
+          <span class="field__label">Label</span>
+          <input id="manual-label" class="field__input" type="text" placeholder="e.g. Break" required maxlength="60" />
+        </label>
+        <div class="form-actions">
+          <button type="button" class="btn btn--ghost" id="cancel-form">Cancel</button>
+          <button type="submit" class="btn btn--primary">Save alarm</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ── QR overlay (hidden by default) ── -->
+    <div class="qr-overlay" id="qr-overlay" hidden aria-modal="true" role="dialog" aria-label="QR code">
+      <div class="qr-overlay__card">
+        <div class="qr-overlay__header">
+          <span class="qr-overlay__title">Schedule QR code</span>
+          <button class="qr-overlay__close" id="qr-close" type="button" aria-label="Close QR code">✕</button>
+        </div>
+
+        <canvas class="qr-overlay__canvas" id="qr-canvas" width="240" height="240"></canvas>
+        <p class="qr-overlay__hint" id="qr-hint"></p>
+
+        <!-- Optional viewer URL — if set the QR encodes a real https:// link instead of raw text -->
+        <details class="qr-url-details" id="qr-url-details">
+          <summary class="qr-url-details__summary">Open as link on phone</summary>
+          <div class="qr-url-details__body">
+            <p class="qr-url-details__help">
+              Deploy <code>schedule-view.html</code> to a public host (e.g.
+              <a href="https://pages.github.com" target="_blank" rel="noopener">GitHub Pages</a>),
+              paste the base URL below, and the QR will open the <strong>Alvaria Alarms PWA</strong>
+              — a full installable app where users can view their schedule, manage alarms, and
+              scan future QR codes directly from their phone.
+            </p>
+            <div class="qr-url-details__row">
+              <input class="qr-url-details__input" id="qr-base-url" type="url"
+                placeholder="https://you.github.io/alvaria-view"
+                autocomplete="url" spellcheck="false" />
+              <button class="btn btn--primary qr-url-details__save" id="qr-save-url" type="button">Set</button>
+            </div>
+            <p class="qr-url-details__status" id="qr-url-status"></p>
+          </div>
+        </details>
+
+        <div class="qr-overlay__actions">
+          <a class="btn btn--primary qr-overlay__download" id="qr-download" download="schedule-qr.png" aria-label="Download QR code as PNG">Download QR</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Main scrollable content ── -->
+    <main class="timeline" id="timeline-root" aria-label="Alarm schedule">
+      <!-- populated by popup.js -->
+    </main>
+
+    <!-- ── Add alarm footer ── -->
+    <footer class="add-alarm-footer">
+      <button class="add-alarm-btn" id="add-alarm-btn" type="button" aria-label="Add alarm">
+        <span aria-hidden="true">＋</span> Add alarm
+      </button>
+    </footer>
+
+  </div>
+  <script src="qrcode.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

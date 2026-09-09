@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Alvaria Segment Alerts",
+  "version": "0.1.0",
+  "description": "Alerts at the start of each schedule segment on the Alvaria WFO dashboard.",
+  "permissions": [
+    "alarms",
+    "notifications",
+    "storage",
+    "tabs",
+    "windows"
+  ],
+  "host_permissions": [
+    "https://kroger.hosted.aspect-cloud.net/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://kroger.hosted.aspect-cloud.net/WFO/default/Home/Dashboard*",
+        "file:///*/test-page.html"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

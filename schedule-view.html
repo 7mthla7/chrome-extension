@@ -1,0 +1,2235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Alarms" />
+  <title>Alvaria Alarms</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    /* ── Shared design tokens ── */
+    :root {
+      --bg:              #F7F8FA;
+      --card:            #FFFFFF;
+      --border:          #E5E7EB;
+      --text:            #17202A;
+      --text-muted:      #6B7280;
+      --accent:          #2563EB;
+      --accent-hover:    #1D4ED8;
+      --success:         #22C55E;
+      --warning:         #F59E0B;
+      --danger:          #EF4444;
+      --meal:            #3B82F6;
+      --special:         #8B5CF6;
+      --disabled:        #9CA3AF;
+      --radius-sm:       8px;
+      --radius-md:       12px;
+      --radius-lg:       16px;
+      --shadow-card:     0 1px 4px rgba(0,0,0,.08);
+      --shadow-modal:    0 20px 60px rgba(0,0,0,.18);
+      --transition:      120ms ease;
+      --transition-slow: 220ms ease;
+      --font:            -apple-system, "Segoe UI", system-ui, Arial, sans-serif;
+      --nav-h:           56px;
+      --header-h:        52px;
+    }
+    [data-theme="dark"] {
+      --bg:              #111827;
+      --card:            #1F2937;
+      --border:          #374151;
+      --text:            #F9FAFB;
+      --text-muted:      #9CA3AF;
+      --accent:          #3B82F6;
+      --accent-hover:    #2563EB;
+      --success:         #22C55E;
+      --warning:         #F59E0B;
+      --danger:          #F87171;
+      --meal:            #60A5FA;
+      --special:         #A78BFA;
+      --disabled:        #6B7280;
+      --shadow-card:     0 1px 6px rgba(0,0,0,.4);
+      --shadow-modal:    0 20px 60px rgba(0,0,0,.55);
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text);
+      transition: background var(--transition-slow), color var(--transition-slow);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── App shell ── */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+      position: relative;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      position: relative;
+      z-index: var(--z-header, 10);
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      height: var(--header-h);
+      flex-shrink: 0;
+      transition: background var(--transition-slow), border-color var(--transition-slow);
+    }
+    .app-header__brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .app-header__icon { font-size: 20px; line-height: 1; }
+    .app-header__title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .app-header__actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .icon-btn {
+      all: unset;
+      cursor: pointer;
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--text-muted);
+      transition: background var(--transition), color var(--transition);
+      flex-shrink: 0;
+    }
+    .icon-btn:hover, .icon-btn:focus-visible {
+      background: var(--border);
+      color: var(--text);
+    }
+    .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* ── Tab pages ── */
+    .tab-pages {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    .tab-page {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      padding-bottom: calc(var(--nav-h) + 8px);
+      scrollbar-width: none;
+      display: none;
+    }
+    .tab-page::-webkit-scrollbar { display: none; }
+    .tab-page.is-active { display: block; }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      height: var(--nav-h);
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: stretch;
+      flex-shrink: 0;
+      transition: background var(--transition-slow), border-color var(--transition-slow);
+    }
+    .nav-btn {
+      all: unset;
+      cursor: pointer;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 6px 4px;
+      border-radius: 0;
+      color: var(--text-muted);
+      transition: color var(--transition), background var(--transition);
+      position: relative;
+    }
+    .nav-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .nav-btn.is-active { color: var(--accent); }
+    .nav-btn__icon { font-size: 20px; line-height: 1; }
+    .nav-btn__label { font-size: 10px; font-weight: 600; letter-spacing: 0.03em; }
+    .nav-btn.is-active .nav-btn__label { color: var(--accent); }
+
+    /* Active indicator pill */
+    .nav-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) scaleX(0);
+      width: 32px;
+      height: 2px;
+      border-radius: 0 0 2px 2px;
+      background: var(--accent);
+      transition: transform var(--transition);
+    }
+    .nav-btn.is-active::before { transform: translateX(-50%) scaleX(1); }
+
+    /* ────────────────────────────────────────────
+       DASHBOARD TAB
+       ──────────────────────────────────────────── */
+    .dash-hero {
+      margin: 16px 16px 0;
+      background: var(--accent);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .dash-hero__date {
+      font-size: 12px;
+      font-weight: 600;
+      opacity: .75;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .dash-hero__time {
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .dash-hero__day { font-size: 14px; opacity: .85; }
+
+    .dash-section { margin: 16px 16px 0; }
+    .dash-section__label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      padding: 0 2px;
+    }
+
+    /* Next-up card (dashboard) */
+    .next-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      transition: background var(--transition-slow), border-color var(--transition-slow);
+    }
+    .next-card__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 5px;
+      background: var(--disabled);
+    }
+    .next-card__dot--break   { background: var(--warning); }
+    .next-card__dot--meal    { background: var(--meal); }
+    .next-card__dot--special { background: var(--special); }
+    .next-card__dot--manual  { background: var(--success); }
+
+    .next-card__body { flex: 1; min-width: 0; }
+    .next-card__name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .next-card__time-big {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+      margin-top: 2px;
+    }
+    .next-card__rel {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .next-card__empty {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      box-shadow: var(--shadow-card);
+    }
+    .next-card__empty-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+
+    /* Today list (dashboard) */
+    .today-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 16px;
+    }
+    .today-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      transition: background var(--transition);
+    }
+    .today-row.is-past { opacity: .45; }
+    .today-row__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--disabled);
+    }
+    .today-row__dot--break   { background: var(--warning); }
+    .today-row__dot--meal    { background: var(--meal); }
+    .today-row__dot--special { background: var(--special); }
+    .today-row__dot--manual  { background: var(--success); }
+    .today-row__name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .today-row__time {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Stats strip */
+    .stats-strip {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 0;
+    }
+    .stat-card {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 12px;
+      text-align: center;
+      box-shadow: var(--shadow-card);
+    }
+    .stat-card__num {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .stat-card__label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* Sync status */
+    .sync-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      box-shadow: var(--shadow-card);
+    }
+    .sync-row__icon { font-size: 18px; flex-shrink: 0; }
+    .sync-row__body { flex: 1; min-width: 0; }
+    .sync-row__title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .sync-row__sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .sync-row__badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 99px;
+      background: #DCFCE7;
+      color: #166534;
+      flex-shrink: 0;
+    }
+    [data-theme="dark"] .sync-row__badge {
+      background: #14532D;
+      color: #86EFAC;
+    }
+    .sync-row__badge--warn {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+    [data-theme="dark"] .sync-row__badge--warn {
+      background: #451A03;
+      color: #FCD34D;
+    }
+
+    /* ────────────────────────────────────────────
+       SCHEDULE TAB
+       ──────────────────────────────────────────── */
+    .schedule-filters {
+      display: flex;
+      gap: 6px;
+      padding: 12px 16px 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    .schedule-filters::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      all: unset;
+      cursor: pointer;
+      white-space: nowrap;
+      padding: 5px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      background: var(--card);
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+      flex-shrink: 0;
+    }
+    .filter-chip.is-active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .filter-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* Day group */
+    .day-group { margin: 16px 16px 0; }
+    .day-group__header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .day-group__title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .day-group__line { flex: 1; height: 1px; background: var(--border); }
+
+    /* Alarm card */
+    .alarm-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 12px;
+      margin-bottom: 3px;
+      transition: background var(--transition), opacity var(--transition);
+      cursor: default;
+    }
+    .alarm-card:hover { background: #FAFAFA; }
+    [data-theme="dark"] .alarm-card:hover { background: #263040; }
+    .alarm-card.is-off { opacity: .5; }
+    .alarm-card.is-past { opacity: .35; }
+
+    .alarm-card__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--disabled);
+    }
+    .alarm-card__dot--break   { background: var(--warning); }
+    .alarm-card__dot--meal    { background: var(--meal); }
+    .alarm-card__dot--special { background: var(--special); }
+    .alarm-card__dot--manual  { background: var(--success); }
+
+    .alarm-card__body { flex: 1; min-width: 0; }
+    .alarm-card__label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .alarm-card__time { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .alarm-card__badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: var(--border);
+      color: var(--text-muted);
+      margin-left: 5px;
+      vertical-align: middle;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Toggle switch */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .toggle-input { display: none; }
+    .toggle-track {
+      display: inline-flex;
+      align-items: center;
+      width: 36px;
+      height: 20px;
+      border-radius: 10px;
+      background: var(--disabled);
+      position: relative;
+      transition: background var(--transition);
+    }
+    .toggle-track::after {
+      content: "";
+      position: absolute;
+      left: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform var(--transition), box-shadow var(--transition);
+      box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    }
+    .toggle-input:checked + .toggle-track { background: var(--success); }
+    .toggle-input:checked + .toggle-track::after { transform: translateX(16px); }
+
+    /* Delete button */
+    .del-btn {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      color: var(--disabled);
+      transition: color var(--transition), background var(--transition);
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .del-btn:hover { color: var(--danger); background: #FEF2F2; }
+    [data-theme="dark"] .del-btn:hover { background: #2D1515; color: #F87171; }
+    .del-btn:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+
+    /* ────────────────────────────────────────────
+       ALARMS TAB
+       ──────────────────────────────────────────── */
+    .alarms-hero {
+      margin: 16px 16px 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-card);
+    }
+    .alarms-hero__title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .alarm-offset-list { display: flex; flex-direction: column; gap: 6px; }
+    .alarm-offset-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .alarm-offset-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .alarm-offset-row__label { flex: 1; font-size: 13px; color: var(--text); }
+    .alarm-offset-row__sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    /* Alarm count badge */
+    .alarm-count-strip {
+      display: flex;
+      gap: 8px;
+      margin: 16px 16px 0;
+    }
+    .alarm-count-card {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      text-align: center;
+    }
+    .alarm-count-card__num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1; }
+    .alarm-count-card__label { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+    /* ────────────────────────────────────────────
+       SETTINGS TAB
+       ──────────────────────────────────────────── */
+    .settings-section { margin: 16px 16px 0; }
+    .settings-section__title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      padding: 0 2px;
+    }
+    .settings-group {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row:hover { background: var(--bg); }
+    .settings-row__icon {
+      font-size: 18px;
+      flex-shrink: 0;
+      width: 28px;
+      text-align: center;
+    }
+    .settings-row__body { flex: 1; min-width: 0; }
+    .settings-row__title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .settings-row__sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .settings-row__action { flex-shrink: 0; color: var(--text-muted); }
+
+    /* About card */
+    .about-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-align: center;
+      box-shadow: var(--shadow-card);
+    }
+    .about-card__icon { font-size: 36px; display: block; margin-bottom: 10px; }
+    .about-card__name { font-size: 16px; font-weight: 700; color: var(--text); }
+    .about-card__version { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .about-card__desc { font-size: 12px; color: var(--text-muted); margin-top: 10px; line-height: 1.6; }
+
+    /* ────────────────────────────────────────────
+       SHARED COMPONENTS
+       ──────────────────────────────────────────── */
+
+    /* Empty / state box */
+    .state-box {
+      margin: 24px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 32px 20px;
+      text-align: center;
+      box-shadow: var(--shadow-card);
+    }
+    .state-box__icon  { font-size: 36px; display: block; margin-bottom: 12px; }
+    .state-box__title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .state-box__body  { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .state-box.is-error .state-box__title { color: var(--danger); }
+
+    /* Buttons */
+    .btn {
+      all: unset;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      transition: background var(--transition), color var(--transition);
+    }
+    .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .btn--primary { background: var(--accent); color: #fff; }
+    .btn--primary:hover { background: var(--accent-hover); }
+    .btn--ghost { border: 1px solid var(--border); color: var(--text-muted); }
+    .btn--ghost:hover { background: var(--bg); color: var(--text); }
+    .btn--danger { background: var(--danger); color: #fff; }
+    .btn--danger:hover { opacity: .88; }
+    .btn:disabled { opacity: .45; pointer-events: none; }
+
+    /* Form fields */
+    .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+    .field__label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .field__input {
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color var(--transition), box-shadow var(--transition);
+      width: 100%;
+      font-family: var(--font);
+    }
+    .field__input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+    }
+    .field__input.is-invalid { border-color: var(--danger); }
+    .form-row { display: flex; gap: 8px; }
+    .form-row .field { flex: 1; }
+    .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+
+    /* Add alarm panel (slide-up sheet) */
+    .add-sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(0,0,0,.45);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .add-sheet-backdrop.is-open { display: flex; }
+    .add-sheet {
+      background: var(--card);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: 20px 20px 32px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: var(--shadow-modal);
+      border-top: 1px solid var(--border);
+    }
+    .add-sheet__handle {
+      width: 36px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      margin: 0 auto 18px;
+    }
+    .add-sheet__title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    /* FAB */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--nav-h) + 16px);
+      right: max(16px, calc((100vw - 480px) / 2 + 16px));
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 26px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(37,99,235,.35);
+      transition: transform var(--transition), background var(--transition), box-shadow var(--transition);
+      z-index: 50;
+      line-height: 1;
+    }
+    .fab:hover  { background: var(--accent-hover); transform: scale(1.06); }
+    .fab:active { transform: scale(0.96); }
+    .fab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+    /* QR scan modal */
+    .qr-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: rgba(0,0,0,.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .qr-modal-backdrop.is-open { display: flex; }
+    .qr-modal {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: var(--shadow-modal);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .qr-modal__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .qr-modal__title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .qr-modal__video-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: #000;
+    }
+    .qr-modal__video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .qr-modal__overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .qr-modal__finder {
+      width: 60%;
+      aspect-ratio: 1;
+      border: 2px solid rgba(255,255,255,.8);
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 0 9999px rgba(0,0,0,.4);
+    }
+    .qr-modal__hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .qr-modal__status {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      min-height: 18px;
+    }
+    .qr-modal__status.is-success { color: var(--success); font-weight: 600; }
+    .qr-modal__status.is-error   { color: var(--danger);  font-weight: 600; }
+
+    /* Toast notifications */
+    .toast-wrap {
+      position: fixed;
+      bottom: calc(var(--nav-h) + 12px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: calc(100% - 32px);
+      max-width: 448px;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-modal);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: all;
+      animation: toastIn 200ms ease forwards;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .toast__icon  { font-size: 20px; flex-shrink: 0; }
+    .toast__body  { flex: 1; min-width: 0; }
+    .toast__label { font-size: 13px; font-weight: 700; color: var(--text); }
+    .toast__time  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .toast__close {
+      all: unset;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-muted);
+      padding: 2px 4px;
+      flex-shrink: 0;
+    }
+
+    /* Install banner */
+    .install-banner {
+      margin: 12px 16px 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-card);
+    }
+    .install-banner.is-hidden { display: none; }
+    .install-banner__body { flex: 1; min-width: 0; }
+    .install-banner__title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .install-banner__sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .install-banner__close {
+      all: unset;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-muted);
+      padding: 2px 4px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Install banner ── -->
+  <div class="install-banner is-hidden" id="install-banner" role="alert">
+    <span style="font-size:20px">📲</span>
+    <div class="install-banner__body">
+      <div class="install-banner__title">Add to Home Screen</div>
+      <div class="install-banner__sub">Install for quick access &amp; offline use</div>
+    </div>
+    <button class="btn btn--primary" id="install-btn" style="font-size:12px;padding:7px 12px">Install</button>
+    <button class="install-banner__close" id="install-dismiss" aria-label="Dismiss">✕</button>
+  </div>
+
+  <div class="app-shell">
+
+    <!-- ── App Header ── -->
+    <header class="app-header">
+      <div class="app-header__brand">
+        <span class="app-header__icon" aria-hidden="true">🔔</span>
+        <span class="app-header__title">Alarms</span>
+      </div>
+      <div class="app-header__actions">
+        <button class="icon-btn" id="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+        <button class="icon-btn" id="notif-btn" title="Enable notifications" aria-label="Enable notifications">🔕</button>
+        <button class="icon-btn" id="scan-btn" title="Scan QR code" aria-label="Scan QR code">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/>
+            <rect x="5" y="16" width="3" height="3"/>
+            <path d="M14 14h3v3h-3z"/><path d="M17 17h4"/><path d="M17 21v-4"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Tab Pages ── -->
+    <div class="tab-pages">
+
+      <!-- DASHBOARD -->
+      <section class="tab-page is-active" id="page-dashboard" role="tabpanel" aria-label="Dashboard">
+
+        <!-- Live clock hero -->
+        <div class="dash-hero">
+          <div class="dash-hero__date" id="hero-date"></div>
+          <div class="dash-hero__time" id="hero-time"></div>
+          <div class="dash-hero__day"  id="hero-day"></div>
+        </div>
+
+        <!-- Stats strip -->
+        <div class="dash-section">
+          <div class="stats-strip">
+            <div class="stat-card">
+              <div class="stat-card__num" id="stat-today">–</div>
+              <div class="stat-card__label">Today</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__num" id="stat-upcoming">–</div>
+              <div class="stat-card__label">Upcoming</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__num" id="stat-total">–</div>
+              <div class="stat-card__label">Total</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Next up -->
+        <div class="dash-section">
+          <div class="dash-section__label">Next alarm</div>
+          <div id="dash-next-wrap"></div>
+        </div>
+
+        <!-- Today's schedule -->
+        <div class="dash-section" id="dash-today-section">
+          <div class="dash-section__label">Today's schedule</div>
+          <ul class="today-list" id="dash-today-list"></ul>
+        </div>
+
+        <!-- Sync status -->
+        <div class="dash-section" style="margin-bottom:16px">
+          <div class="dash-section__label">Data source</div>
+          <div class="sync-row">
+            <span class="sync-row__icon">📡</span>
+            <div class="sync-row__body">
+              <div class="sync-row__title">QR / URL schedule</div>
+              <div class="sync-row__sub" id="sync-sub">No data loaded yet</div>
+            </div>
+            <span class="sync-row__badge" id="sync-badge">–</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- SCHEDULE -->
+      <section class="tab-page" id="page-schedule" role="tabpanel" aria-label="Schedule">
+        <!-- Filter chips -->
+        <div class="schedule-filters" role="group" aria-label="Filter">
+          <button class="filter-chip is-active" data-filter="all">All</button>
+          <button class="filter-chip" data-filter="today">Today</button>
+          <button class="filter-chip" data-filter="tomorrow">Tomorrow</button>
+          <button class="filter-chip" data-filter="upcoming">Upcoming</button>
+        </div>
+        <div id="schedule-content"></div>
+      </section>
+
+      <!-- ALARMS -->
+      <section class="tab-page" id="page-alarms" role="tabpanel" aria-label="Alarms">
+
+        <!-- Alarm counts -->
+        <div class="alarm-count-strip">
+          <div class="alarm-count-card">
+            <div class="alarm-count-card__num" id="alarms-on-count">–</div>
+            <div class="alarm-count-card__label">Active</div>
+          </div>
+          <div class="alarm-count-card">
+            <div class="alarm-count-card__num" id="alarms-off-count">–</div>
+            <div class="alarm-count-card__label">Disabled</div>
+          </div>
+        </div>
+
+        <!-- Default offset config -->
+        <div class="dash-section">
+          <div class="dash-section__label">Default alarm offset</div>
+          <div class="alarms-hero">
+            <div class="alarms-hero__title">Fire alarm how early?</div>
+            <div class="alarm-offset-list" role="radiogroup" aria-label="Default alarm offset">
+              <label class="alarm-offset-row" style="cursor:pointer">
+                <input type="radio" name="offset" value="0"  style="accent-color:var(--accent)">
+                <div>
+                  <div class="alarm-offset-row__label">At start time</div>
+                  <div class="alarm-offset-row__sub">Alarm fires exactly at segment start</div>
+                </div>
+              </label>
+              <label class="alarm-offset-row" style="cursor:pointer">
+                <input type="radio" name="offset" value="5"  style="accent-color:var(--accent)" checked>
+                <div>
+                  <div class="alarm-offset-row__label">5 minutes early</div>
+                  <div class="alarm-offset-row__sub">Alarm fires 5 min before start</div>
+                </div>
+              </label>
+              <label class="alarm-offset-row" style="cursor:pointer">
+                <input type="radio" name="offset" value="10" style="accent-color:var(--accent)">
+                <div>
+                  <div class="alarm-offset-row__label">10 minutes early</div>
+                  <div class="alarm-offset-row__sub">Alarm fires 10 min before start</div>
+                </div>
+              </label>
+              <label class="alarm-offset-row" style="cursor:pointer">
+                <input type="radio" name="offset" value="15" style="accent-color:var(--accent)">
+                <div>
+                  <div class="alarm-offset-row__label">15 minutes early</div>
+                  <div class="alarm-offset-row__sub">Alarm fires 15 min before start</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alarm list (disabled alarms) -->
+        <div class="dash-section" id="alarms-disabled-section" style="margin-bottom:16px">
+          <div class="dash-section__label">Disabled alarms</div>
+          <div id="alarms-disabled-list"></div>
+        </div>
+
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="tab-page" id="page-settings" role="tabpanel" aria-label="Settings">
+
+        <div class="settings-section">
+          <div class="settings-section__title">Appearance</div>
+          <div class="settings-group">
+            <div class="settings-row" id="settings-theme" style="cursor:pointer" tabindex="0" role="button" aria-label="Toggle theme">
+              <span class="settings-row__icon">🎨</span>
+              <div class="settings-row__body">
+                <div class="settings-row__title">Theme</div>
+                <div class="settings-row__sub" id="settings-theme-sub">Light mode</div>
+              </div>
+              <span class="settings-row__action" id="settings-theme-icon">🌙</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section__title">Notifications</div>
+          <div class="settings-group">
+            <div class="settings-row" id="settings-notif" style="cursor:pointer" tabindex="0" role="button" aria-label="Toggle notifications">
+              <span class="settings-row__icon">🔔</span>
+              <div class="settings-row__body">
+                <div class="settings-row__title">Browser notifications</div>
+                <div class="settings-row__sub" id="settings-notif-sub">Tap to enable</div>
+              </div>
+              <span class="settings-row__action" id="settings-notif-icon">🔕</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section__title">Data</div>
+          <div class="settings-group">
+            <div class="settings-row" id="settings-scan" style="cursor:pointer" tabindex="0" role="button" aria-label="Scan new QR">
+              <span class="settings-row__icon">📷</span>
+              <div class="settings-row__body">
+                <div class="settings-row__title">Scan new QR code</div>
+                <div class="settings-row__sub">Import schedule from extension</div>
+              </div>
+              <span class="settings-row__action">›</span>
+            </div>
+            <div class="settings-row" id="settings-clear" style="cursor:pointer" tabindex="0" role="button" aria-label="Clear schedule data">
+              <span class="settings-row__icon">🗑️</span>
+              <div class="settings-row__body">
+                <div class="settings-row__title">Clear all data</div>
+                <div class="settings-row__sub" id="settings-clear-sub">Remove schedule &amp; extra alarms</div>
+              </div>
+              <span class="settings-row__action" style="color:var(--danger)">›</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section" style="margin-bottom:16px">
+          <div class="settings-section__title">About</div>
+          <div class="about-card">
+            <span class="about-card__icon">🔔</span>
+            <div class="about-card__name">Alvaria Alarms</div>
+            <div class="about-card__version">v1.0 · PWA</div>
+            <div class="about-card__desc">
+              Turns your Alvaria WFO schedule into on-device alarms.<br>
+              Scan the QR code from the Chrome extension to import your schedule.
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </div><!-- /tab-pages -->
+
+    <!-- ── Bottom Nav ── -->
+    <nav class="bottom-nav" role="tablist" aria-label="Main navigation">
+      <button class="nav-btn is-active" data-tab="dashboard" role="tab" aria-selected="true" aria-controls="page-dashboard">
+        <span class="nav-btn__icon">🏠</span>
+        <span class="nav-btn__label">Home</span>
+      </button>
+      <button class="nav-btn" data-tab="schedule" role="tab" aria-selected="false" aria-controls="page-schedule">
+        <span class="nav-btn__icon">📅</span>
+        <span class="nav-btn__label">Schedule</span>
+      </button>
+      <button class="nav-btn" data-tab="alarms" role="tab" aria-selected="false" aria-controls="page-alarms">
+        <span class="nav-btn__icon">⏰</span>
+        <span class="nav-btn__label">Alarms</span>
+      </button>
+      <button class="nav-btn" data-tab="settings" role="tab" aria-selected="false" aria-controls="page-settings">
+        <span class="nav-btn__icon">⚙️</span>
+        <span class="nav-btn__label">Settings</span>
+      </button>
+    </nav>
+
+  </div><!-- /app-shell -->
+
+  <!-- ── Add Alarm Sheet ── -->
+  <div class="add-sheet-backdrop" id="add-sheet-backdrop" role="dialog" aria-modal="true" aria-label="Add alarm">
+    <div class="add-sheet">
+      <div class="add-sheet__handle" aria-hidden="true"></div>
+      <div class="add-sheet__title">Add Alarm</div>
+      <div class="form-row">
+        <label class="field">
+          <span class="field__label">Date</span>
+          <input id="f-date" class="field__input" type="date" />
+        </label>
+        <label class="field">
+          <span class="field__label">Time</span>
+          <input id="f-time" class="field__input" type="time" />
+        </label>
+      </div>
+      <label class="field">
+        <span class="field__label">Label</span>
+        <input id="f-label" class="field__input" type="text" placeholder="e.g. Break" maxlength="60" />
+      </label>
+      <div class="form-actions">
+        <button class="btn btn--ghost" id="f-cancel">Cancel</button>
+        <button class="btn btn--primary" id="f-save">Save alarm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── QR Scan Modal ── -->
+  <div class="qr-modal-backdrop" id="qr-modal-backdrop" role="dialog" aria-modal="true" aria-label="Scan QR code">
+    <div class="qr-modal">
+      <div class="qr-modal__header">
+        <span class="qr-modal__title">📷 Scan Schedule QR</span>
+        <button class="icon-btn" id="qr-close" aria-label="Close scanner">✕</button>
+      </div>
+      <div class="qr-modal__video-wrap">
+        <video class="qr-modal__video" id="qr-video" playsinline autoplay muted></video>
+        <div class="qr-modal__overlay">
+          <div class="qr-modal__finder" aria-hidden="true"></div>
+        </div>
+      </div>
+      <p class="qr-modal__hint">Point your camera at the QR code shown in the extension</p>
+      <div class="qr-modal__status" id="qr-status" aria-live="polite"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn--ghost" id="qr-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FAB (add alarm) ── -->
+  <button class="fab" id="fab" aria-label="Add alarm" title="Add alarm">＋</button>
+
+  <!-- ── Toast container ── -->
+  <div class="toast-wrap" id="toast-wrap" aria-live="assertive" aria-atomic="false"></div>
+
+  <script>
+  /* ─────────────────────────────────────────────────────────────────────────────
+     Alvaria Alarms — PWA Application Script
+     Preserves full backward compatibility with the V1 compact QR format used by
+     the Chrome extension.  All core logic (codec, helpers, alarm scheduling) is
+     kept identical to the original so existing QR codes continue to work.
+     ───────────────────────────────────────────────────────────────────────────── */
+  (function () {
+    "use strict";
+
+    /* ── Storage keys ─────────────────────────────────────────────────────── */
+    var STORE_EXTRA    = "sv_extra";      // extra (manually added) alarms
+    var STORE_DISABLED = "sv_disabled";   // set of "date|time|label" keys
+    var STORE_THEME    = "sv_theme";      // "light" | "dark"
+    var STORE_OFFSET   = "sv_offset";     // default alarm offset (minutes, 0/5/10/15)
+    var STORE_SHARED   = "sv_shared";     // persisted shared items (survives page reload)
+    var STORE_SYNC_TS  = "sv_sync_ts";    // ISO timestamp of last QR import
+
+    /* ── App state ────────────────────────────────────────────────────────── */
+    var sharedItems  = [];        // decoded from URL fragment or localStorage
+    var extraItems   = [];        // added manually by the user
+    var disabledKeys = new Set(); // keys of disabled alarms
+    var alarmTimers  = [];        // setTimeout IDs
+    var notifGranted = false;
+    var activeTab    = "dashboard";
+    var activeFilter = "all";     // schedule tab filter
+    var alarmOffset  = 0;         // minutes before start time to fire alarm
+    var syncTimestamp = "";       // human-readable last sync time
+    var deferredInstall = null;   // beforeinstallprompt event
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       V1 CODEC  (exact copy of the logic in popup.js — must stay in sync)
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    function itemKey(item) {
+      return (item.date||"") + "|" + (item.time||"") + "|" + (item.label||"");
+    }
+
+    function parseTime(timeStr) {
+      var m = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      if (!m) return null;
+      var h = parseInt(m[1]), min = parseInt(m[2]), p = m[3].toUpperCase();
+      if (p==="AM") { if (h===12) h=0; } else { if (h!==12) h+=12; }
+      return h*60 + min;
+    }
+
+    function parseDate(dateStr) {
+      var m = String(dateStr).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (!m) return null;
+      return { year:parseInt(m[3]), month0:parseInt(m[1])-1, day:parseInt(m[2]) };
+    }
+
+    function itemTimestamp(item) {
+      var dp = parseDate(item.date);
+      var mins = parseTime(item.time);
+      if (!dp || mins===null) return null;
+      return new Date(dp.year, dp.month0, dp.day,
+                      Math.floor(mins/60), mins%60, 0, 0).getTime();
+    }
+
+    function effectiveTimestamp(item) {
+      // Apply early-fire offset (alarm fires `alarmOffset` minutes before start)
+      var ts = itemTimestamp(item);
+      if (ts===null) return null;
+      return ts - alarmOffset * 60000;
+    }
+
+    /* ── Decode V1 QR payload ───────────────────────────────────────────── */
+    function decodeV1(e) {
+      var body = e.slice(3), p = body.indexOf("|"), dc = {};
+      body.slice(0,p).split(",").forEach(function(x) {
+        var q = x.indexOf("="); if (q<0) return;
+        dc[x.slice(0,q)] = x.slice(q+1)
+          .replace(/~3/g,"=").replace(/~2/g,",")
+          .replace(/~1/g,"|").replace(/~0/g,"~");
+      });
+      var result = [];
+      body.slice(p+1).split("|").forEach(function(b) {
+        var ci = b.indexOf(":"); if (ci<0) return;
+        var mo=parseInt(b.slice(0,2))-1, dy=parseInt(b.slice(2,4)), yr=parseInt(b.slice(4,ci));
+        var pr=0;
+        b.slice(ci+1).split(";").forEach(function(x) {
+          if (!x) return;
+          var si = x.search(/[A-Z]/); if (si<=0) return;
+          var delta = parseInt(x.slice(0,si),36);
+          var id    = x.slice(si); pr+=delta;
+          var lbl=dc[id]; if (!lbl) return;
+          var hh=Math.floor(pr/60), mm=pr%60, ap=hh<12?"AM":"PM", h12=hh%12||12;
+          result.push({
+            time:  h12+":"+(mm<10?"0":"")+mm+" "+ap,
+            label: lbl,
+            date:  (mo+1)+"/"+dy+"/"+yr
+          });
+        });
+      });
+      return result;
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       DATE / TIME HELPERS
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function pad(n) { return n<10?"0"+n:String(n); }
+
+    function relativeTime(ms) {
+      var diff = ms - Date.now();
+      if (diff<=0) return "now";
+      var m = Math.floor(diff/60000), h = Math.floor(m/60);
+      return h>0 ? "in "+h+"h "+(m%60)+"m" : "in "+m+"m";
+    }
+
+    function fmtDate(dateStr) {
+      var dp = parseDate(dateStr);
+      if (!dp) return dateStr||"";
+      var d=new Date(dp.year,dp.month0,dp.day), today=new Date(); today.setHours(0,0,0,0);
+      var diff=Math.round((d-today)/86400000);
+      if (diff===0) return "Today";
+      if (diff===1) return "Tomorrow";
+      return d.toLocaleDateString("en-US",{weekday:"short",month:"numeric",day:"numeric"});
+    }
+
+    function groupHeader(dateStr) {
+      var dp = parseDate(dateStr);
+      if (!dp) return dateStr||"";
+      var d=new Date(dp.year,dp.month0,dp.day), today=new Date(); today.setHours(0,0,0,0);
+      var diff=Math.round((d-today)/86400000);
+      var wd=d.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
+      var md=(dp.month0+1)+"/"+dp.day;
+      if (diff===0) return "TODAY — "+wd+" "+md;
+      if (diff===1) return "TOMORROW — "+wd+" "+md;
+      return wd+" "+md;
+    }
+
+    function isToday(dateStr) {
+      var dp=parseDate(dateStr); if (!dp) return false;
+      var d=new Date(dp.year,dp.month0,dp.day), today=new Date(); today.setHours(0,0,0,0);
+      return Math.round((d-today)/86400000)===0;
+    }
+
+    function isTomorrow(dateStr) {
+      var dp=parseDate(dateStr); if (!dp) return false;
+      var d=new Date(dp.year,dp.month0,dp.day), today=new Date(); today.setHours(0,0,0,0);
+      return Math.round((d-today)/86400000)===1;
+    }
+
+    function dotClass(label) {
+      var l=label.toLowerCase();
+      if (l.includes("break")) return "break";
+      if (l.includes("lunch")||l.includes("meal")||l.includes("dinner")) return "meal";
+      if (l.includes("meeting")||l.includes("training")||l.includes("special")) return "special";
+      if (l.includes("manual")||l.includes("ksc")) return "manual";
+      return "";
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       STORAGE
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function loadStorage() {
+      try { extraItems=JSON.parse(localStorage.getItem(STORE_EXTRA)||"[]"); } catch(e){ extraItems=[]; }
+      try { disabledKeys=new Set(JSON.parse(localStorage.getItem(STORE_DISABLED)||"[]")); } catch(e){ disabledKeys=new Set(); }
+      try { alarmOffset=parseInt(localStorage.getItem(STORE_OFFSET)||"0")||0; } catch(e){ alarmOffset=0; }
+      try {
+        var saved=JSON.parse(localStorage.getItem(STORE_SHARED)||"[]");
+        if (saved.length) sharedItems=saved;
+      } catch(e){}
+      try { syncTimestamp=localStorage.getItem(STORE_SYNC_TS)||""; } catch(e){}
+    }
+
+    function saveExtra()    { try{ localStorage.setItem(STORE_EXTRA,JSON.stringify(extraItems)); }catch(e){} }
+    function saveDisabled() { try{ localStorage.setItem(STORE_DISABLED,JSON.stringify([...disabledKeys])); }catch(e){} }
+    function saveOffset()   { try{ localStorage.setItem(STORE_OFFSET,String(alarmOffset)); }catch(e){} }
+    function saveShared()   { try{ localStorage.setItem(STORE_SHARED,JSON.stringify(sharedItems));
+                                   localStorage.setItem(STORE_SYNC_TS,syncTimestamp); }catch(e){} }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       THEME
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function applyTheme(t) {
+      var isDark = (t==="dark");
+      if (isDark) document.body.setAttribute("data-theme","dark");
+      else         document.body.removeAttribute("data-theme");
+      var moon="🌙", sun="☀️", icon=isDark?sun:moon;
+      document.getElementById("theme-btn").textContent=icon;
+      document.getElementById("settings-theme-icon").textContent=icon;
+      document.getElementById("settings-theme-sub").textContent=isDark?"Dark mode":"Light mode";
+      // Update meta theme-color
+      var meta=document.querySelector("meta[name=theme-color]");
+      if (meta) meta.content=isDark?"#1F2937":"#2563EB";
+    }
+
+    function loadTheme() {
+      var t="light";
+      try{ t=localStorage.getItem(STORE_THEME)||"light"; }catch(e){}
+      if (!localStorage.getItem(STORE_THEME) && window.matchMedia("(prefers-color-scheme:dark)").matches) t="dark";
+      applyTheme(t);
+    }
+
+    function toggleTheme() {
+      var isDark=document.body.getAttribute("data-theme")==="dark";
+      var next=isDark?"light":"dark";
+      applyTheme(next);
+      try{ localStorage.setItem(STORE_THEME,next); }catch(e){}
+    }
+
+    document.getElementById("theme-btn").addEventListener("click",toggleTheme);
+    document.getElementById("settings-theme").addEventListener("click",toggleTheme);
+    document.getElementById("settings-theme").addEventListener("keydown",function(e){
+      if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleTheme(); }
+    });
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       NOTIFICATIONS
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function updateNotifUI() {
+      var granted=("Notification" in window && Notification.permission==="granted");
+      notifGranted=granted;
+      var icon=granted?"🔔":"🔕", title=granted?"Notifications on":"Enable notifications";
+      var nbtn=document.getElementById("notif-btn");
+      nbtn.textContent=icon; nbtn.title=title;
+      document.getElementById("settings-notif-icon").textContent=icon;
+      document.getElementById("settings-notif-sub").textContent=granted?"Enabled — you will receive alerts":"Tap to enable browser notifications";
+    }
+
+    function requestNotifications() {
+      if (!("Notification" in window)) return;
+      if (Notification.permission==="granted"){ notifGranted=true; return; }
+      Notification.requestPermission().then(function(p){
+        if (p==="granted") notifGranted=true;
+        updateNotifUI();
+        scheduleAlarms();
+      });
+    }
+
+    document.getElementById("notif-btn").addEventListener("click",requestNotifications);
+    document.getElementById("settings-notif").addEventListener("click",requestNotifications);
+    document.getElementById("settings-notif").addEventListener("keydown",function(e){
+      if(e.key==="Enter"||e.key===" "){ e.preventDefault(); requestNotifications(); }
+    });
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       SOUND
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function playAlertSound() {
+      try {
+        var ctx=new (window.AudioContext||window.webkitAudioContext)();
+        [0,0.18,0.36].forEach(function(offset){
+          var osc=ctx.createOscillator(), gain=ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type="sine"; osc.frequency.value=880;
+          gain.gain.setValueAtTime(0.4,ctx.currentTime+offset);
+          gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+offset+0.15);
+          osc.start(ctx.currentTime+offset); osc.stop(ctx.currentTime+offset+0.16);
+        });
+      } catch(e){}
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       TOAST
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function showToast(item) {
+      var wrap=document.getElementById("toast-wrap");
+      var t=document.createElement("div"); t.className="toast";
+      t.innerHTML=
+        '<span class="toast__icon" aria-hidden="true">🔔</span>'+
+        '<div class="toast__body">'+
+          '<div class="toast__label">'+esc(item.label)+'</div>'+
+          '<div class="toast__time">'+esc(item.time)+" · "+esc(fmtDate(item.date))+'</div>'+
+        '</div>'+
+        '<button class="toast__close" aria-label="Dismiss">✕</button>';
+      t.querySelector(".toast__close").addEventListener("click",function(){ t.remove(); });
+      wrap.appendChild(t);
+      setTimeout(function(){ if(t.parentNode) t.remove(); },10000);
+    }
+
+    function showInfoToast(message) {
+      var wrap=document.getElementById("toast-wrap");
+      var t=document.createElement("div"); t.className="toast";
+      t.innerHTML=
+        '<span class="toast__icon" aria-hidden="true">ℹ️</span>'+
+        '<div class="toast__body"><div class="toast__label">'+esc(message)+'</div></div>'+
+        '<button class="toast__close" aria-label="Dismiss">✕</button>';
+      t.querySelector(".toast__close").addEventListener("click",function(){ t.remove(); });
+      wrap.appendChild(t);
+      setTimeout(function(){ if(t.parentNode) t.remove(); },4000);
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       ALARM SCHEDULING  (setTimeout — fires within next 24h)
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function fireAlarm(item) {
+      playAlertSound();
+      showToast(item);
+      if (notifGranted && "Notification" in window) {
+        try {
+          new Notification("⏰ "+item.label, {
+            body: item.time+" · "+fmtDate(item.date)+(alarmOffset>0?" ("+alarmOffset+" min early)":""),
+            tag:  itemKey(item)
+          });
+        } catch(e){}
+      }
+    }
+
+    function clearTimers() {
+      alarmTimers.forEach(function(id){ clearTimeout(id); });
+      alarmTimers=[];
+    }
+
+    function scheduleAlarms() {
+      clearTimers();
+      var now=Date.now();
+      allItems().forEach(function(item){
+        if (disabledKeys.has(itemKey(item))) return;
+        var ts=effectiveTimestamp(item);
+        if (ts===null) return;
+        var delay=ts-now;
+        if (delay<0 || delay>24*60*60*1000) return;
+        var id=setTimeout(function(){
+          fireAlarm(item);
+          renderAll();
+        },delay);
+        alarmTimers.push(id);
+      });
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       DATA
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function allItems() {
+      return sharedItems.concat(extraItems).sort(function(a,b){
+        var ta=itemTimestamp(a), tb=itemTimestamp(b);
+        if (ta===null&&tb===null) return 0;
+        if (ta===null) return 1; if (tb===null) return -1;
+        return ta-tb;
+      });
+    }
+
+    function loadUrlFragment() {
+      var raw=window.location.hash.replace(/^#/,"");
+      if (!raw) return false;
+      try {
+        var compact=decodeURIComponent(raw);
+        if (compact.indexOf("V1|")===0) {
+          sharedItems=decodeV1(compact);
+          syncTimestamp=new Date().toLocaleString("en-US",{
+            month:"short",day:"numeric",hour:"numeric",minute:"2-digit"
+          });
+          saveShared();
+          // Clean URL fragment so reload doesn't re-import
+          history.replaceState(null,"",window.location.pathname+window.location.search);
+          return true;
+        }
+      } catch(e){ sharedItems=[]; }
+      return false;
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       RENDER HELPERS
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function buildToggle(key, isEnabled) {
+      var wrap=document.createElement("label");
+      wrap.className="toggle-wrap"; wrap.title="Enable / disable alarm";
+      var input=document.createElement("input");
+      input.type="checkbox"; input.className="toggle-input"; input.checked=isEnabled;
+      var track=document.createElement("span"); track.className="toggle-track";
+      input.addEventListener("change",function(){
+        if (input.checked) disabledKeys.delete(key); else disabledKeys.add(key);
+        saveDisabled(); scheduleAlarms(); renderAll();
+      });
+      wrap.appendChild(input); wrap.appendChild(track);
+      return wrap;
+    }
+
+    function buildAlarmCard(item, isExtra) {
+      var key=itemKey(item);
+      var isOff=disabledKeys.has(key);
+      var ts=itemTimestamp(item);
+      var isPast=ts!==null && ts<=Date.now();
+      var dc=dotClass(item.label||"");
+
+      var card=document.createElement("div");
+      card.className="alarm-card"+(isOff?" is-off":"")+(isPast?" is-past":"");
+
+      var dot=document.createElement("span");
+      dot.className="alarm-card__dot"+(dc?" alarm-card__dot--"+dc:""); dot.setAttribute("aria-hidden","true");
+
+      var body=document.createElement("div"); body.className="alarm-card__body";
+      var lbl=document.createElement("div"); lbl.className="alarm-card__label";
+      lbl.textContent=item.label||"Alarm";
+      if (isPast) {
+        var badge=document.createElement("span"); badge.className="alarm-card__badge";
+        badge.textContent="past"; lbl.appendChild(badge);
+      }
+      var timeEl=document.createElement("div"); timeEl.className="alarm-card__time";
+      timeEl.textContent=item.time||"";
+      body.appendChild(lbl); body.appendChild(timeEl);
+
+      card.appendChild(dot);
+      card.appendChild(body);
+      card.appendChild(buildToggle(key, !isOff));
+
+      if (isExtra) {
+        var del=document.createElement("button");
+        del.className="del-btn"; del.setAttribute("aria-label","Delete alarm"); del.title="Delete";
+        del.textContent="✕";
+        del.addEventListener("click",function(e){
+          e.stopPropagation();
+          extraItems=extraItems.filter(function(ex){ return itemKey(ex)!==key; });
+          saveExtra(); scheduleAlarms(); renderAll();
+        });
+        card.appendChild(del);
+      }
+
+      return card;
+    }
+
+    function buildDayGroup(dateStr, items) {
+      var group=document.createElement("div"); group.className="day-group";
+      var header=document.createElement("div"); header.className="day-group__header";
+      header.innerHTML=
+        '<span class="day-group__title">'+esc(groupHeader(dateStr))+'</span>'+
+        '<span class="day-group__line" aria-hidden="true"></span>';
+      group.appendChild(header);
+
+      var extras=new Set(extraItems.map(itemKey));
+      items.forEach(function(item){
+        group.appendChild(buildAlarmCard(item, extras.has(itemKey(item))));
+      });
+      return group;
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       RENDER — DASHBOARD
+       ───────────────────────────────────────────────────────────────────────── */
+
+    var _clockTimer=null;
+
+    function renderClock() {
+      var now=new Date();
+      var timeStr=now.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+      var dateStr=now.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+      var dayStr=now.toLocaleDateString("en-US",{weekday:"long"});
+      document.getElementById("hero-time").textContent=timeStr;
+      document.getElementById("hero-date").textContent=dateStr;
+      document.getElementById("hero-day").textContent=dayStr;
+    }
+
+    function renderDashboard() {
+      var now=Date.now();
+      var items=allItems();
+
+      // Stats
+      var todayItems=items.filter(function(i){ return isToday(i.date); });
+      var upcoming=items.filter(function(i){ return !disabledKeys.has(itemKey(i)) && itemTimestamp(i)>now; });
+      document.getElementById("stat-today").textContent=todayItems.length;
+      document.getElementById("stat-upcoming").textContent=upcoming.length;
+      document.getElementById("stat-total").textContent=items.length;
+
+      // Next alarm card
+      var nextWrap=document.getElementById("dash-next-wrap");
+      nextWrap.innerHTML="";
+      var next=upcoming[0];
+      if (next) {
+        var ts=itemTimestamp(next);
+        var dc=dotClass(next.label||"");
+        var card=document.createElement("div"); card.className="next-card";
+        card.innerHTML=
+          '<span class="next-card__dot next-card__dot--'+(dc||"")+'"></span>'+
+          '<div class="next-card__body">'+
+            '<div class="next-card__name">'+esc(next.label||"Alarm")+'</div>'+
+            '<div class="next-card__time-big">'+esc(next.time||"")+'</div>'+
+            '<div class="next-card__rel">'+relativeTime(ts)+'</div>'+
+          '</div>';
+        nextWrap.appendChild(card);
+      } else {
+        var empty=document.createElement("div"); empty.className="next-card__empty";
+        empty.innerHTML='<span class="next-card__empty-icon">🎉</span>No upcoming alarms';
+        nextWrap.appendChild(empty);
+      }
+
+      // Today's list
+      var todaySection=document.getElementById("dash-today-section");
+      var todayList=document.getElementById("dash-today-list");
+      todayList.innerHTML="";
+      if (todayItems.length) {
+        todaySection.style.display="";
+        todayItems.forEach(function(item){
+          var ts2=itemTimestamp(item);
+          var isPast=ts2!==null&&ts2<=now;
+          var dc2=dotClass(item.label||"");
+          var li=document.createElement("li");
+          li.className="today-row"+(isPast?" is-past":"");
+          li.innerHTML=
+            '<span class="today-row__dot today-row__dot--'+(dc2||"")+'"></span>'+
+            '<span class="today-row__name">'+esc(item.label||"Alarm")+'</span>'+
+            '<span class="today-row__time">'+esc(item.time||"")+'</span>';
+          todayList.appendChild(li);
+        });
+      } else {
+        todaySection.style.display="none";
+      }
+
+      // Sync status
+      var syncBadge=document.getElementById("sync-badge");
+      var syncSub=document.getElementById("sync-sub");
+      if (sharedItems.length) {
+        syncBadge.textContent="Synced";
+        syncBadge.className="sync-row__badge";
+        syncSub.textContent=sharedItems.length+" segments"+(syncTimestamp?" · "+syncTimestamp:"");
+      } else if (extraItems.length) {
+        syncBadge.textContent="Manual";
+        syncBadge.className="sync-row__badge sync-row__badge--warn";
+        syncSub.textContent=extraItems.length+" manually added alarm"+(extraItems.length===1?"":"s");
+      } else {
+        syncBadge.textContent="None";
+        syncBadge.className="sync-row__badge sync-row__badge--warn";
+        syncSub.textContent="Scan a QR code from the extension to import";
+      }
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       RENDER — SCHEDULE TAB
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function renderSchedule() {
+      var container=document.getElementById("schedule-content");
+      container.innerHTML="";
+      var items=allItems();
+
+      // Apply filter
+      var filtered;
+      if (activeFilter==="today")    filtered=items.filter(function(i){ return isToday(i.date); });
+      else if (activeFilter==="tomorrow") filtered=items.filter(function(i){ return isTomorrow(i.date); });
+      else if (activeFilter==="upcoming") filtered=items.filter(function(i){ return itemTimestamp(i)>Date.now(); });
+      else filtered=items;
+
+      if (!filtered.length) {
+        var sb=document.createElement("div"); sb.className="state-box";
+        sb.innerHTML='<span class="state-box__icon">📭</span>'+
+          '<p class="state-box__title">No alarms</p>'+
+          '<p class="state-box__body">'+
+            (items.length ? "No alarms match this filter." :
+             "Scan the QR code from the Alvaria extension to import your schedule.")+
+          '</p>';
+        container.appendChild(sb);
+        return;
+      }
+
+      // Group by date
+      var groups=new Map();
+      filtered.forEach(function(item){
+        var k=item.date||"Unknown";
+        if (!groups.has(k)) groups.set(k,[]);
+        groups.get(k).push(item);
+      });
+
+      groups.forEach(function(groupItems,dateStr){
+        container.appendChild(buildDayGroup(dateStr,groupItems));
+      });
+
+      // Bottom spacer
+      var spacer=document.createElement("div"); spacer.style.height="16px";
+      container.appendChild(spacer);
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       RENDER — ALARMS TAB
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function renderAlarmsTab() {
+      var items=allItems();
+      var onCount=items.filter(function(i){ return !disabledKeys.has(itemKey(i)); }).length;
+      var offCount=items.filter(function(i){ return  disabledKeys.has(itemKey(i)); }).length;
+      document.getElementById("alarms-on-count").textContent=onCount;
+      document.getElementById("alarms-off-count").textContent=offCount;
+
+      // Sync offset radio
+      document.querySelectorAll("input[name=offset]").forEach(function(r){
+        r.checked=(parseInt(r.value)===alarmOffset);
+        r.addEventListener("change",function(){
+          if (r.checked){ alarmOffset=parseInt(r.value)||0; saveOffset(); scheduleAlarms(); }
+        });
+      });
+
+      // Disabled alarms list
+      var disSection=document.getElementById("alarms-disabled-section");
+      var disList=document.getElementById("alarms-disabled-list");
+      disList.innerHTML="";
+      var disabled=items.filter(function(i){ return disabledKeys.has(itemKey(i)); });
+      if (disabled.length) {
+        disSection.style.display="";
+        var extras=new Set(extraItems.map(itemKey));
+        disabled.forEach(function(item){
+          disList.appendChild(buildAlarmCard(item,extras.has(itemKey(item))));
+        });
+        var spacer=document.createElement("div"); spacer.style.height="8px";
+        disList.appendChild(spacer);
+      } else {
+        disSection.style.display="none";
+      }
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       RENDER — ALL
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function renderAll() {
+      renderDashboard();
+      if (activeTab==="schedule") renderSchedule();
+      if (activeTab==="alarms")   renderAlarmsTab();
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       NAVIGATION
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function switchTab(tabId) {
+      activeTab=tabId;
+      document.querySelectorAll(".nav-btn").forEach(function(btn){
+        var active=(btn.dataset.tab===tabId);
+        btn.classList.toggle("is-active",active);
+        btn.setAttribute("aria-selected",active?"true":"false");
+      });
+      document.querySelectorAll(".tab-page").forEach(function(page){
+        page.classList.toggle("is-active",page.id==="page-"+tabId);
+      });
+
+      // Lazy-render when switching to a tab
+      if (tabId==="schedule")  renderSchedule();
+      if (tabId==="alarms")    renderAlarmsTab();
+    }
+
+    document.querySelectorAll(".nav-btn").forEach(function(btn){
+      btn.addEventListener("click",function(){ switchTab(btn.dataset.tab); });
+    });
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       SCHEDULE FILTER CHIPS
+       ───────────────────────────────────────────────────────────────────────── */
+
+    document.querySelectorAll(".filter-chip").forEach(function(chip){
+      chip.addEventListener("click",function(){
+        activeFilter=chip.dataset.filter;
+        document.querySelectorAll(".filter-chip").forEach(function(c){
+          c.classList.toggle("is-active",c.dataset.filter===activeFilter);
+        });
+        renderSchedule();
+      });
+    });
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       FAB / ADD ALARM SHEET
+       ───────────────────────────────────────────────────────────────────────── */
+
+    var fab=document.getElementById("fab");
+    var sheetBackdrop=document.getElementById("add-sheet-backdrop");
+
+    function openAddSheet() {
+      sheetBackdrop.classList.add("is-open");
+      var dateEl=document.getElementById("f-date");
+      if (!dateEl.value) {
+        var n=new Date();
+        dateEl.value=n.getFullYear()+"-"+pad(n.getMonth()+1)+"-"+pad(n.getDate());
+      }
+      document.getElementById("f-label").focus();
+    }
+
+    function closeAddSheet() {
+      sheetBackdrop.classList.remove("is-open");
+    }
+
+    fab.addEventListener("click",openAddSheet);
+    document.getElementById("f-cancel").addEventListener("click",closeAddSheet);
+    sheetBackdrop.addEventListener("click",function(e){
+      if (e.target===sheetBackdrop) closeAddSheet();
+    });
+
+    document.getElementById("f-save").addEventListener("click",function(){
+      var dateEl=document.getElementById("f-date");
+      var timeEl=document.getElementById("f-time");
+      var labelEl=document.getElementById("f-label");
+      var valid=true;
+      [dateEl,timeEl,labelEl].forEach(function(el){
+        if (!el.value.trim()){ el.classList.add("is-invalid"); valid=false; }
+        else el.classList.remove("is-invalid");
+      });
+      if (!valid) return;
+
+      var parts=dateEl.value.split("-");
+      var dateStr=parseInt(parts[1])+"/"+parseInt(parts[2])+"/"+parts[0];
+      var tp=timeEl.value.split(":");
+      var hh=parseInt(tp[0]),mm=parseInt(tp[1]),ap=hh<12?"AM":"PM",h12=hh%12||12;
+      var timeStr=h12+":"+pad(mm)+" "+ap;
+
+      extraItems.push({ date:dateStr, time:timeStr, label:labelEl.value.trim() });
+      saveExtra(); scheduleAlarms(); renderAll();
+      closeAddSheet();
+      timeEl.value=""; labelEl.value="";
+      showInfoToast("Alarm added");
+    });
+
+    // Clear is-invalid on input
+    ["f-date","f-time","f-label"].forEach(function(id){
+      document.getElementById(id).addEventListener("input",function(){ this.classList.remove("is-invalid"); });
+    });
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       SETTINGS — scan and clear
+       ───────────────────────────────────────────────────────────────────────── */
+
+    document.getElementById("settings-scan").addEventListener("click",function(){ openQrModal(); });
+    document.getElementById("settings-scan").addEventListener("keydown",function(e){
+      if (e.key==="Enter"||e.key===" "){ e.preventDefault(); openQrModal(); }
+    });
+    document.getElementById("scan-btn").addEventListener("click",function(){ openQrModal(); });
+
+    document.getElementById("settings-clear").addEventListener("click",function(){
+      if (!confirm("Remove all schedule data and extra alarms? This cannot be undone.")) return;
+      sharedItems=[]; extraItems=[]; disabledKeys=new Set(); syncTimestamp="";
+      try{ localStorage.removeItem(STORE_SHARED); localStorage.removeItem(STORE_SYNC_TS);
+           localStorage.removeItem(STORE_EXTRA);  localStorage.removeItem(STORE_DISABLED); }catch(e){}
+      clearTimers(); renderAll();
+      showInfoToast("Data cleared");
+    });
+    document.getElementById("settings-clear").addEventListener("keydown",function(e){
+      if (e.key==="Enter"||e.key===" "){ e.preventDefault(); this.click(); }
+    });
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       QR SCANNER  (uses jsQR via CDN — loaded lazily when modal opens)
+       ───────────────────────────────────────────────────────────────────────── */
+
+    var qrModalBackdrop=document.getElementById("qr-modal-backdrop");
+    var qrVideo=document.getElementById("qr-video");
+    var qrStatus=document.getElementById("qr-status");
+    var qrStream=null;
+    var qrRaf=null;
+    var jsQRLoaded=false;
+
+    function loadJsQR(cb) {
+      if (window.jsQR) { cb(); return; }
+      var s=document.createElement("script");
+      // Local copy first (works offline in APK and when served locally)
+      s.src="jsqr.min.js";
+      s.onload=function(){ jsQRLoaded=true; cb(); };
+      s.onerror=function(){
+        // Fallback to CDN if local copy not found (e.g. bare GitHub Pages deploy)
+        var s2=document.createElement("script");
+        s2.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+        s2.onload=function(){ jsQRLoaded=true; cb(); };
+        s2.onerror=function(){ qrStatus.textContent="Could not load QR library. Check your connection."; qrStatus.className="qr-modal__status is-error"; };
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(s);
+    }
+
+    function stopQrScanner() {
+      if (qrRaf) { cancelAnimationFrame(qrRaf); qrRaf=null; }
+      if (qrStream) { qrStream.getTracks().forEach(function(t){ t.stop(); }); qrStream=null; }
+      qrVideo.srcObject=null;
+    }
+
+    function openQrModal() {
+      qrStatus.textContent=""; qrStatus.className="qr-modal__status";
+      qrModalBackdrop.classList.add("is-open");
+      switchTab("dashboard"); // ensure dashboard is visible if user is on settings
+
+      loadJsQR(function(){
+        navigator.mediaDevices.getUserMedia({ video:{ facingMode:"environment" } })
+          .then(function(stream){
+            qrStream=stream;
+            qrVideo.srcObject=stream;
+            qrVideo.play();
+            scanFrame();
+          })
+          .catch(function(err){
+            qrStatus.textContent="Camera access denied. Paste the QR URL fragment manually.";
+            qrStatus.className="qr-modal__status is-error";
+            console.warn("[alvaria-pwa] camera error",err);
+          });
+      });
+    }
+
+    function closeQrModal() {
+      stopQrScanner();
+      qrModalBackdrop.classList.remove("is-open");
+    }
+
+    function scanFrame() {
+      if (!qrStream) return;
+      if (qrVideo.readyState===qrVideo.HAVE_ENOUGH_DATA) {
+        var canvas=document.createElement("canvas");
+        canvas.width=qrVideo.videoWidth; canvas.height=qrVideo.videoHeight;
+        var ctx=canvas.getContext("2d");
+        ctx.drawImage(qrVideo,0,0,canvas.width,canvas.height);
+        var imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
+        var code=window.jsQR(imgData.data,imgData.width,imgData.height,{ inversionAttempts:"dontInvert" });
+        if (code) {
+          onQrDetected(code.data);
+          return; // stop scanning
+        }
+      }
+      qrRaf=requestAnimationFrame(scanFrame);
+    }
+
+    function onQrDetected(raw) {
+      stopQrScanner();
+      try {
+        // The QR may be:
+        //   1. A raw V1 compact string: "V1|dict|days"
+        //   2. A full URL with fragment:  "https://…/schedule-view.html#V1%7C…"
+        var compact=raw;
+        if (raw.indexOf("http")===0) {
+          var hashIdx=raw.indexOf("#");
+          if (hashIdx>=0) compact=decodeURIComponent(raw.slice(hashIdx+1));
+        }
+        if (compact.indexOf("V1|")!==0) throw new Error("not V1");
+        sharedItems=decodeV1(compact);
+        syncTimestamp=new Date().toLocaleString("en-US",{
+          month:"short",day:"numeric",hour:"numeric",minute:"2-digit"
+        });
+        saveShared();
+        scheduleAlarms();
+        renderAll();
+        qrStatus.textContent="✓ "+sharedItems.length+" alarms imported!";
+        qrStatus.className="qr-modal__status is-success";
+        setTimeout(function(){ closeQrModal(); showInfoToast(sharedItems.length+" alarms imported"); },1200);
+      } catch(e) {
+        qrStatus.textContent="QR code not recognised. Make sure it's from the Alvaria extension.";
+        qrStatus.className="qr-modal__status is-error";
+        // Restart scanning after error
+        setTimeout(function(){
+          qrStatus.textContent=""; qrStatus.className="qr-modal__status";
+          if (qrStream) { qrRaf=requestAnimationFrame(scanFrame); }
+        },2500);
+      }
+    }
+
+    document.getElementById("qr-close").addEventListener("click",closeQrModal);
+    document.getElementById("qr-cancel").addEventListener("click",closeQrModal);
+    qrModalBackdrop.addEventListener("click",function(e){
+      if (e.target===qrModalBackdrop) closeQrModal();
+    });
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       PWA INSTALL BANNER
+       ───────────────────────────────────────────────────────────────────────── */
+
+    var installBanner=document.getElementById("install-banner");
+
+    window.addEventListener("beforeinstallprompt",function(e){
+      e.preventDefault();
+      deferredInstall=e;
+      installBanner.classList.remove("is-hidden");
+    });
+
+    document.getElementById("install-btn").addEventListener("click",function(){
+      if (!deferredInstall) return;
+      deferredInstall.prompt();
+      deferredInstall.userChoice.then(function(){
+        deferredInstall=null;
+        installBanner.classList.add("is-hidden");
+      });
+    });
+
+    document.getElementById("install-dismiss").addEventListener("click",function(){
+      installBanner.classList.add("is-hidden");
+      try{ localStorage.setItem("sv_install_dismissed","1"); }catch(e){}
+    });
+
+    window.addEventListener("appinstalled",function(){
+      installBanner.classList.add("is-hidden");
+      deferredInstall=null;
+    });
+
+    // Don't show if already dismissed
+    try{
+      if (localStorage.getItem("sv_install_dismissed")==="1") {
+        installBanner.classList.add("is-hidden");
+      }
+    }catch(e){}
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       SERVICE WORKER REGISTRATION
+       ───────────────────────────────────────────────────────────────────────── */
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load",function(){
+        navigator.serviceWorker.register("sw.js").catch(function(err){
+          console.warn("[alvaria-pwa] SW registration failed",err);
+        });
+      });
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       RELATIVE TIME TICKER
+       ───────────────────────────────────────────────────────────────────────── */
+
+    setInterval(function(){
+      if (activeTab==="dashboard") {
+        // Re-render just the next card's relative time
+        var relEl=document.querySelector(".next-card .next-card__rel");
+        if (relEl) {
+          var now=Date.now();
+          var upcoming=allItems().filter(function(i){
+            return !disabledKeys.has(itemKey(i)) && itemTimestamp(i)>now;
+          });
+          if (upcoming[0]) relEl.textContent=relativeTime(itemTimestamp(upcoming[0]));
+        }
+      }
+    },30000);
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       NO-DATA PROMPT
+       ───────────────────────────────────────────────────────────────────────── */
+
+    function maybeShowNoDataState() {
+      var items=allItems();
+      if (items.length>0) return;
+      // Show a helper state-box in the dashboard
+      var nextWrap=document.getElementById("dash-next-wrap");
+      nextWrap.innerHTML="";
+      var box=document.createElement("div"); box.className="state-box is-error";
+      box.innerHTML=
+        '<span class="state-box__icon">📷</span>'+
+        '<p class="state-box__title">No schedule data</p>'+
+        '<p class="state-box__body">'+
+          'Open the Alvaria Alarms extension, click the QR icon, and scan the code to import your schedule.'+
+        '</p>'+
+        '<div style="margin-top:14px">'+
+          '<button class="btn btn--primary" id="empty-scan-btn">Scan QR code</button>'+
+        '</div>';
+      nextWrap.appendChild(box);
+      document.getElementById("empty-scan-btn").addEventListener("click",openQrModal);
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       BOOT
+       ───────────────────────────────────────────────────────────────────────── */
+
+    loadTheme();
+    loadStorage();
+    updateNotifUI();
+
+    // Try to load schedule from URL fragment (QR link)
+    var loadedFromUrl=loadUrlFragment();
+    if (!loadedFromUrl) {
+      // sharedItems already loaded from localStorage in loadStorage()
+    }
+
+    // Auto-request notifications if already granted
+    if ("Notification" in window && Notification.permission==="granted") {
+      notifGranted=true;
+    }
+
+    // Start clock
+    renderClock();
+    _clockTimer=setInterval(renderClock,1000);
+
+    // Initial render
+    renderDashboard();
+
+    // Show no-data state if needed
+    if (allItems().length===0) maybeShowNoDataState();
+
+    // Schedule alarms
+    scheduleAlarms();
+
+  })();
+  </script>
+</body>
+</html>

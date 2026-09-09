@@ -1,0 +1,891 @@
+/* ─────────────────────────────────────────────
+   Design tokens
+   Single source of truth lives in shared/tokens.css.
+   Kept inline here because Chrome extension CSS cannot
+   use @import across directories in MV3.
+   ───────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg:              #F7F8FA;
+  --card:            #FFFFFF;
+  --border:          #E5E7EB;
+  /* Text */
+  --text:            #17202A;
+  --text-muted:      #6B7280;
+  /* Brand */
+  --accent:          #2563EB;
+  --accent-hover:    #1D4ED8;
+  /* Semantic */
+  --success:         #22C55E;
+  --warning:         #F59E0B;
+  --danger:          #EF4444;
+  --meal:            #3B82F6;
+  --special:         #8B5CF6;
+  --disabled:        #9CA3AF;
+  /* Shape */
+  --radius-sm:       8px;
+  --radius-md:       12px;
+  --radius-lg:       16px;
+  /* Elevation */
+  --shadow-card:     0 1px 4px rgba(0,0,0,.08);
+  --shadow-modal:    0 20px 60px rgba(0,0,0,.18);
+  /* Motion */
+  --transition:      120ms ease;
+  --transition-slow: 220ms ease;
+  /* Typography */
+  --font-family:     -apple-system, "Segoe UI", system-ui, Arial, sans-serif;
+}
+
+/* ─────────────────────────────────────────────
+   Dark mode tokens  (toggled via data-theme="dark" on <body>)
+   ───────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:              #111827;
+  --card:            #1F2937;
+  --border:          #374151;
+  --text:            #F9FAFB;
+  --text-muted:      #9CA3AF;
+  --accent:          #3B82F6;
+  --accent-hover:    #2563EB;
+  --success:         #22C55E;
+  --warning:         #F59E0B;
+  --danger:          #F87171;
+  --meal:            #60A5FA;
+  --special:         #A78BFA;
+  --disabled:        #6B7280;
+  --shadow-card:     0 1px 6px rgba(0,0,0,.4);
+  --shadow-modal:    0 20px 60px rgba(0,0,0,.55);
+}
+
+/* ─────────────────────────────────────────────
+   Reset / base
+   ───────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", system-ui, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+  /* prevent Chrome from adding its own outer scrollbar next to the popup */
+  overflow: hidden;
+}
+
+/* ─────────────────────────────────────────────
+   Popup shell
+   ───────────────────────────────────────────── */
+.popup {
+  width: 420px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+/* ─────────────────────────────────────────────
+   App header
+   ───────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 6px;
+}
+
+/* Left slot — refresh + QR grouped together */
+.app-header__left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Shared base for refresh + QR buttons */
+.app-header__refresh,
+.app-header__qr {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition), color var(--transition);
+}
+
+.app-header__refresh:hover,
+.app-header__refresh:focus-visible,
+.app-header__qr:hover,
+.app-header__qr:focus-visible {
+  background: var(--border);
+  color: var(--text);
+}
+
+.app-header__refresh:focus-visible,
+.app-header__qr:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.app-header__refresh.is-spinning {
+  animation: refresh-spin 600ms linear infinite;
+  pointer-events: none;
+}
+
+@keyframes refresh-spin {
+  to { transform: rotate(360deg); }
+}
+
+.app-header__center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-header__icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.app-header__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.app-header__theme {
+  all: unset;
+  cursor: pointer;
+  font-size: 17px;
+  color: var(--text-muted);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition), color var(--transition);
+  line-height: 1;
+}
+
+.app-header__theme:hover,
+.app-header__theme:focus-visible {
+  background: var(--border);
+  color: var(--text);
+}
+
+.app-header__theme:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Actions group (theme + popout) */
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Pop-out button — mirrors theme button */
+.app-header__popout {
+  all: unset;
+  cursor: pointer;
+  font-size: 17px;
+  color: var(--text-muted);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition), color var(--transition);
+  line-height: 1;
+}
+
+.app-header__popout:hover,
+.app-header__popout:focus-visible {
+  background: var(--border);
+  color: var(--text);
+}
+
+.app-header__popout:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Hide the pop-out button once the extension is already a window */
+.is-window #popout-btn {
+  display: none;
+}
+
+/* ── Window (detached) mode ──────────────────────────────────────────────────
+   Applied to <body> when the popup is opened as a standalone chrome window.
+   The popup shell grows to fill the full viewport.
+   ─────────────────────────────────────────────────────────────────────────── */
+.is-window .popup {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.is-window .app-header {
+  cursor: grab;
+  user-select: none;
+}
+
+/* ─────────────────────────────────────────────
+   Date subtitle
+   ───────────────────────────────────────────── */
+.app-date {
+  margin: 0;
+  padding: 0 16px 12px;
+  font-size: 13px;
+  text-align: center;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ─────────────────────────────────────────────
+   Settings / Add alarm panel
+   ───────────────────────────────────────────── */
+.settings-panel {
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px;
+}
+
+.settings-panel__title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.field__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field__input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  width: 100%;
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+}
+
+.field__input.is-invalid {
+  border-color: #EF4444;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.btn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background var(--transition), color var(--transition);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: #1D4ED8;
+}
+
+.btn--ghost {
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.btn--ghost:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ─────────────────────────────────────────────
+   QR overlay
+   ───────────────────────────────────────────── */
+.qr-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.qr-overlay[hidden] {
+  display: none;
+}
+
+.qr-overlay__card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 20px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 280px;
+}
+
+.qr-overlay__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.qr-overlay__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.qr-overlay__close {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: background var(--transition), color var(--transition);
+}
+
+.qr-overlay__close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.qr-overlay__close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.qr-overlay__canvas {
+  display: block;
+  border-radius: 6px;
+  image-rendering: pixelated;
+}
+
+.qr-overlay__hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.qr-overlay__actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.qr-overlay__download {
+  text-decoration: none;
+  font-size: 12px;
+  padding: 7px 18px;
+}
+
+/* ── Optional viewer URL config (collapsible) ── */
+.qr-url-details {
+  width: 100%;
+  font-size: 11px;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+}
+
+.qr-url-details__summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text-muted);
+  list-style: none;
+  user-select: none;
+}
+.qr-url-details__summary::-webkit-details-marker { display: none; }
+.qr-url-details__summary::before {
+  content: "▶ ";
+  font-size: 9px;
+}
+details[open] .qr-url-details__summary::before { content: "▼ "; }
+
+.qr-url-details__body {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qr-url-details__help {
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.qr-url-details__help a { color: var(--accent); }
+.qr-url-details__help code {
+  background: var(--border);
+  border-radius: 3px;
+  padding: 0 3px;
+  font-size: 10px;
+}
+
+.qr-url-details__row {
+  display: flex;
+  gap: 6px;
+}
+
+.qr-url-details__input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--text);
+  background: var(--bg);
+  transition: border-color var(--transition);
+}
+.qr-url-details__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+
+.qr-url-details__save {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 5px 10px;
+}
+
+.qr-url-details__status {
+  margin: 0;
+  font-size: 10px;
+  color: var(--text-muted);
+  min-height: 12px;
+}
+
+/* ─────────────────────────────────────────────
+   Timeline / main scroll area
+   ───────────────────────────────────────────── */
+.timeline {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 4px;
+  max-height: 400px;
+  /* hide the scrollbar visually while keeping scroll functional */
+  scrollbar-width: none;          /* Firefox */
+  /* bottom fade-out mask */
+  mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black calc(100% - 40px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black calc(100% - 40px),
+    transparent 100%
+  );
+}
+
+.timeline::-webkit-scrollbar {
+  width: 0;                       /* Chrome / Edge — hide completely */
+}
+
+/* ─────────────────────────────────────────────
+   Next-Up card
+   ───────────────────────────────────────────── */
+.next-up {
+  margin: 0 12px 12px;
+}
+
+.next-up__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding: 0 4px;
+  margin-bottom: 6px;
+}
+
+.next-up__card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.next-up__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.next-up__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.next-up__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.next-up__time {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.next-up__relative {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.next-up__toggle {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Empty state inside next-up */
+.next-up__empty {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 16px;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ─────────────────────────────────────────────
+   Date-group section headers
+   ───────────────────────────────────────────── */
+.day-group {
+  margin-bottom: 4px;
+}
+
+.day-group__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 4px;
+}
+
+.day-group__title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.day-group__line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ─────────────────────────────────────────────
+   Alarm rows
+   ───────────────────────────────────────────── */
+.alarm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alarm-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  transition: background var(--transition), opacity var(--transition);
+  cursor: default;
+}
+
+.alarm-row:hover {
+  background: #FAFAFA;
+}
+
+[data-theme="dark"] .alarm-row:hover {
+  background: #263040;
+}
+
+/* Disabled alarms */
+.alarm-row--disabled {
+  opacity: 0.55;
+}
+
+.alarm-row--disabled .alarm-row__time,
+.alarm-row--disabled .alarm-row__name {
+  color: var(--text-muted);
+}
+
+/* Dot indicator */
+.alarm-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Time */
+.alarm-row__time {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  min-width: 62px;
+}
+
+/* Name */
+.alarm-row__name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─────────────────────────────────────────────
+   Toggle switch (ON / OFF)
+   ───────────────────────────────────────────── */
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* visually hidden real checkbox */
+.toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.toggle-track {
+  display: inline-flex;
+  align-items: center;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--disabled);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+
+.toggle-track::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+
+.toggle-input:checked + .toggle-track {
+  background: var(--success);
+}
+
+.toggle-input:checked + .toggle-track::after {
+  transform: translateX(16px);
+}
+
+.toggle-input:focus-visible + .toggle-track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────
+   Delete button
+   ───────────────────────────────────────────── */
+.alarm-row__delete {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: var(--disabled);
+  transition: color var(--transition), background var(--transition);
+}
+
+.alarm-row__delete:hover {
+  color: #EF4444;
+  background: #FEF2F2;
+}
+
+[data-theme="dark"] .alarm-row__delete:hover {
+  background: #2D1515;
+  color: #F87171;
+}
+
+.alarm-row__delete:focus-visible {
+  outline: 2px solid #EF4444;
+  outline-offset: 2px;
+}
+
+.alarm-row__delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─────────────────────────────────────────────
+   Color dot helpers — semantic colours
+   ───────────────────────────────────────────── */
+.dot--break   { background: var(--warning); }
+.dot--meal    { background: var(--meal); }
+.dot--special { background: var(--special); }
+.dot--success { background: var(--success); }
+.dot--muted   { background: var(--disabled); }
+
+/* ─────────────────────────────────────────────
+   Empty timeline state
+   ───────────────────────────────────────────── */
+.timeline-empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.timeline-empty__icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* ─────────────────────────────────────────────
+   Add alarm footer
+   ───────────────────────────────────────────── */
+.add-alarm-footer {
+  padding: 8px 16px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+}
+
+.add-alarm-btn {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: calc(100% - 32px);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1.5px dashed #BFDBFE;
+  background: #EFF6FF;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+[data-theme="dark"] .add-alarm-btn {
+  border-color: #1E3A5F;
+  background: #172033;
+}
+
+.add-alarm-btn:hover {
+  background: #DBEAFE;
+  border-color: var(--accent);
+}
+
+[data-theme="dark"] .add-alarm-btn:hover {
+  background: #1E3A5F;
+  border-color: var(--accent);
+}
+
+.add-alarm-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

@@ -1,0 +1,21 @@
+{
+  "appId": "com.alvaria.alarms",
+  "appName": "Alvaria Alarms",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#2563EB",
+      "sound": "alarm"
+    }
+  }
+}
