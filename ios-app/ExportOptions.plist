@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
   <key>method</key>
-  <string>ad-hoc</string>
+  <string>release-testing</string>
   <key>compileBitcode</key>
   <false/>
   <key>signingStyle</key>
@@ -12,5 +12,7 @@
   <true/>
   <key>thinning</key>
   <string>&lt;none&gt;</string>
+  <key>teamID</key>
+  <string>NONE</string>
 </dict>
 </plist>
