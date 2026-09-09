@@ -60,14 +60,18 @@ jobs:
             SKIP_INSTALL=NO \
             BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
-      # ── 8. Export IPA ─────────────────────────────────────────────────────
-      - name: Export IPA
+      # ── 8. Package IPA manually (xcodebuild -exportArchive requires a
+      #       real Apple Developer signing identity on Xcode 26+; we bypass
+      #       it by zipping the .app straight from the archive) ──────────────
+      - name: Package IPA
         run: |
-          xcodebuild \
-            -exportArchive \
-            -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            -exportPath "$RUNNER_TEMP/ipa" \
-            -exportOptionsPlist "$GITHUB_WORKSPACE/ios-app/ExportOptions.plist"
+          APP=$(find "$RUNNER_TEMP/App.xcarchive/Products/Applications" -name "*.app" | head -1)
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -r "$APP" "$RUNNER_TEMP/ipa/Payload/"
+          cd "$RUNNER_TEMP/ipa"
+          zip -r "App.ipa" Payload
+          echo "=== IPA created ==="
+          ls -lh App.ipa
 
       # ── 9. Upload IPA artifact ────────────────────────────────────────────
       - name: Upload IPA artifact
