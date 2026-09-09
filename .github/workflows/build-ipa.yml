@@ -32,30 +32,36 @@ jobs:
         working-directory: ios-app
         run: npm ci
 
-      # ── 5. Add iOS platform (scaffolds ios/ and runs pod install) ────────
+      # ── 5. Add iOS platform (scaffolds ios/ native project + Podfile) ────
       - name: Add Capacitor iOS platform
         working-directory: ios-app
-        run: node node_modules/@capacitor/cli/bin/capacitor add ios
+        run: |
+          node node_modules/@capacitor/cli/bin/capacitor add ios
+          echo "=== ios/ tree after cap add ==="
+          find ios -maxdepth 3 -type f | sort
 
       # ── 6. Sync web assets into the native project ───────────────────────
       - name: Sync web assets
         working-directory: ios-app
         run: node node_modules/@capacitor/cli/bin/capacitor sync ios
 
-      # ── 7. Explicitly run pod install to ensure App.xcworkspace exists ───
+      # ── 7. Install CocoaPods (generates App.xcworkspace) ─────────────────
       - name: Install CocoaPods
+        working-directory: ios-app/ios/App
         run: |
-          cd "$GITHUB_WORKSPACE/ios-app/ios/App"
-          echo "--- Contents of ios/App ---"
+          echo "=== Working directory ==="
+          pwd
+          echo "=== Files present ==="
           ls -la
+          echo "=== Running pod install ==="
           pod install --repo-update
-          echo "--- Verifying App.xcworkspace ---"
-          ls -la App.xcworkspace
+          echo "=== Verifying App.xcworkspace ==="
+          ls -la App.xcworkspace/
 
       # ── 8. Build unsigned archive ─────────────────────────────────────────
       - name: Build IPA (unsigned)
+        working-directory: ios-app/ios/App
         run: |
-          cd "$GITHUB_WORKSPACE/ios-app/ios/App"
           xcodebuild \
             -workspace App.xcworkspace \
             -scheme App \
