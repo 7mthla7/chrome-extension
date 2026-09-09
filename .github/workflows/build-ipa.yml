@@ -32,25 +32,30 @@ jobs:
         working-directory: ios-app
         run: npm ci
 
-      # ── 5. Add iOS platform ──────────────────────────────────────────────
+      # ── 5. Add iOS platform (scaffolds ios/ and runs pod install) ────────
       - name: Add Capacitor iOS platform
         working-directory: ios-app
         run: node node_modules/@capacitor/cli/bin/capacitor add ios
 
-      # ── 6. Sync web assets ───────────────────────────────────────────────
+      # ── 6. Sync web assets into the native project ───────────────────────
       - name: Sync web assets
         working-directory: ios-app
         run: node node_modules/@capacitor/cli/bin/capacitor sync ios
 
-      # ── 7. Install CocoaPods (creates App.xcworkspace) ───────────────────
+      # ── 7. Explicitly run pod install to ensure App.xcworkspace exists ───
       - name: Install CocoaPods
-        working-directory: ios-app/ios/App
-        run: pod install --repo-update
-
-      # ── 8. Build unsigned IPA (no signing required) ──────────────────────
-      - name: Build IPA (unsigned)
-        working-directory: ios-app/ios/App
         run: |
+          cd "$GITHUB_WORKSPACE/ios-app/ios/App"
+          echo "--- Contents of ios/App ---"
+          ls -la
+          pod install --repo-update
+          echo "--- Verifying App.xcworkspace ---"
+          ls -la App.xcworkspace
+
+      # ── 8. Build unsigned archive ─────────────────────────────────────────
+      - name: Build IPA (unsigned)
+        run: |
+          cd "$GITHUB_WORKSPACE/ios-app/ios/App"
           xcodebuild \
             -workspace App.xcworkspace \
             -scheme App \
@@ -61,13 +66,17 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
+
+      # ── 9. Export IPA ─────────────────────────────────────────────────────
+      - name: Export IPA
+        run: |
           xcodebuild \
             -exportArchive \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -exportPath "$RUNNER_TEMP/ipa" \
             -exportOptionsPlist "$GITHUB_WORKSPACE/ios-app/ExportOptions.plist"
 
-      # ── 9. Upload IPA artifact ───────────────────────────────────────────
+      # ── 10. Upload IPA artifact ───────────────────────────────────────────
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
