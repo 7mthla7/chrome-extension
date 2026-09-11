@@ -531,9 +531,20 @@ if (manualForm) {
       }
     }
 
+    // Additional length guard: label must not exceed 60 characters.
+    if (labelInput && labelInput.value.trim().length > 60) {
+      labelInput.classList.add("is-invalid");
+      valid = false;
+    }
+
     if (!valid) return;
 
-    const response = await safeSendMessage({ type: "ADD_MANUAL_SEGMENT", segment: getFormSegment() });
+    const segment = getFormSegment();
+
+    // Abort if helpers returned empty strings (malformed date/time picker values).
+    if (!segment.dateText || !segment.startTimeText || !segment.label) return;
+
+    const response = await safeSendMessage({ type: "ADD_MANUAL_SEGMENT", segment });
 
     if (response && response.ok) {
       renderState(response);

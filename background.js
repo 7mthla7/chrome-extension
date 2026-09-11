@@ -3,6 +3,50 @@ const PARSED_KEY = "parsedSegments";
 const MANUAL_KEY = "manualSegments";
 const ALARM_PREFIX = "segment:";
 
+// ── Input validation helpers ──────────────────────────────────────────────────
+
+const DATE_RE  = /^[\w ,./]+$/;          // allow alphanumeric, space, comma, slash, dot
+const TIME_RE  = /^\d{1,2}:\d{2}\s*(AM|PM)$/i;
+const LABEL_MAX = 60;
+const SEGMENTS_MAX = 200;                // cap total segments accepted per parse
+
+function sanitizeString(value, maxLen) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim().slice(0, maxLen);
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function isValidSegment(seg) {
+  if (!seg || typeof seg !== "object" || Array.isArray(seg)) return false;
+  const dateText      = sanitizeString(seg.dateText, 80);
+  const startTimeText = sanitizeString(seg.startTimeText, 20);
+  const label         = sanitizeString(seg.label, LABEL_MAX);
+  if (!dateText || !startTimeText || !label) return false;
+  if (!TIME_RE.test(startTimeText)) return false;
+  if (!DATE_RE.test(dateText)) return false;
+  return true;
+}
+
+function sanitizeSegment(seg) {
+  return {
+    dateText:      sanitizeString(seg.dateText, 80),
+    startTimeText: sanitizeString(seg.startTimeText, 20),
+    label:         sanitizeString(seg.label, LABEL_MAX),
+    priority:      ["priority", "other", "manual", "snoozed"].includes(seg.priority)
+                     ? seg.priority : "other",
+    backgroundColor: typeof seg.backgroundColor === "string"
+                     ? seg.backgroundColor.trim().slice(0, 50) : "",
+    textColor:       typeof seg.textColor === "string"
+                     ? seg.textColor.trim().slice(0, 50) : ""
+  };
+}
+
+// ── Rate-limit guard for SEGMENTS_PARSED ─────────────────────────────────────
+// Prevents a malicious or runaway content script from hammering the background.
+
+let _lastParsedAt = 0;
+const PARSE_THROTTLE_MS = 2000; // minimum gap between accepted SEGMENTS_PARSED messages
+
 function normalizeDateText(dateText) {
   const parts = dateText.split(",");
   return parts.length > 1 ? parts.slice(1).join(",").trim() : dateText.trim();
@@ -159,13 +203,32 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  // Guard: message must be a plain object with a known type string.
+  if (!message || typeof message !== "object" || typeof message.type !== "string") {
+    return false;
+  }
+
   if (message.type === "SEGMENTS_PARSED") {
+    // Rate-limit: ignore bursts from a hyperactive MutationObserver.
+    const now = Date.now();
+    if (now - _lastParsedAt < PARSE_THROTTLE_MS) {
+      return false;
+    }
+    _lastParsedAt = now;
+
     (async () => {
       try {
-        await chrome.storage.local.set({ [PARSED_KEY]: message.segments });
+        // Validate and sanitize every segment from the content script.
+        const raw = Array.isArray(message.segments) ? message.segments : [];
+        const segments = raw
+          .filter(isValidSegment)
+          .slice(0, SEGMENTS_MAX)
+          .map(sanitizeSegment);
+
+        await chrome.storage.local.set({ [PARSED_KEY]: segments });
         const stored = await chrome.storage.local.get(MANUAL_KEY);
         const manualSegments = stored[MANUAL_KEY] || [];
-        await scheduleSegments([...message.segments, ...manualSegments]);
+        await scheduleSegments([...segments, ...manualSegments]);
       } catch (error) {
         console.error("[alvaria-alerts] failed to schedule segments", error);
       }
@@ -201,12 +264,18 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === "ADD_MANUAL_SEGMENT") {
+    // Validate the incoming segment before touching storage.
+    if (!isValidSegment(message.segment)) {
+      sendResponse({ ok: false });
+      return true;
+    }
     (async () => {
       try {
         const stored = await chrome.storage.local.get([PARSED_KEY, MANUAL_KEY]);
         const parsedSegments = stored[PARSED_KEY] || [];
         const manualSegments = stored[MANUAL_KEY] || [];
-        const updated = [...manualSegments, message.segment];
+        const clean = sanitizeSegment(message.segment);
+        const updated = [...manualSegments, clean];
         await chrome.storage.local.set({ [MANUAL_KEY]: updated });
         const scheduledSegments = await scheduleSegments([...parsedSegments, ...updated]);
         sendResponse({ ok: true, parsedSegments, manualSegments: updated, scheduledSegments });
@@ -219,6 +288,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === "SNOOZE_SEGMENT_ALERT") {
+    // Validate the original segment before creating a snoozed copy.
+    if (!isValidSegment(message.segment)) {
+      sendResponse({ ok: false });
+      return true;
+    }
     (async () => {
       try {
         const stored = await chrome.storage.local.get([PARSED_KEY, MANUAL_KEY]);
@@ -226,7 +300,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         const manualSegments = stored[MANUAL_KEY] || [];
         const snoozedTime = new Date(Date.now() + 5 * 60 * 1000);
         const snoozedSegment = {
-          ...message.segment,
+          ...sanitizeSegment(message.segment),
           dateText: `${snoozedTime.toLocaleDateString("en-US", { weekday: "long" })}, ${snoozedTime.getMonth() + 1}/${snoozedTime.getDate()}/${snoozedTime.getFullYear()}`,
           startTimeText: snoozedTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
         };
@@ -243,12 +317,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === "DELETE_MANUAL_SEGMENT") {
+    // Validate the segment key before querying storage.
+    if (!isValidSegment(message.segment)) {
+      sendResponse({ ok: false });
+      return true;
+    }
     (async () => {
       try {
         const stored = await chrome.storage.local.get([PARSED_KEY, MANUAL_KEY]);
         const parsedSegments = stored[PARSED_KEY] || [];
         const manualSegments = stored[MANUAL_KEY] || [];
-        const keyToDelete = buildSegmentKey(message.segment);
+        const keyToDelete = buildSegmentKey(sanitizeSegment(message.segment));
         const updated = manualSegments.filter(
           (s) => buildSegmentKey(s) !== keyToDelete
         );
